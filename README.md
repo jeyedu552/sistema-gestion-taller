@@ -15,7 +15,7 @@ Toda la lógica de presentación, negocio y persistencia conviven en el mismo en
 ---
 
 ## Diagrama de Bloques Estructurado
-
+![Arquitectura Monolítica](./public/EstructuraProyectoIBIM.png).
 
 ---
 

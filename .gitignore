@@ -47,3 +47,4 @@ next-env.d.ts
 # editores de codigo (evita subir configuraciones personales)
 .vscode/
 .idea/
+.cursor-context.md

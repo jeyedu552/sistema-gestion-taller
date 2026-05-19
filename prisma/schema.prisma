@@ -1,13 +1,105 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// Ubicación del archivo en el proyecto: prisma/schema.prisma
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+// ==========================================
+// ENUMS (Tipos Enumerados Estrictos)
+// ==========================================
+
+enum Role {
+  ADMIN
+  MECANICO
+  CLIENTE
+}
+
+enum OrderStatus {
+  PENDIENTE
+  EN_PROGRESO
+  LISTO_PARA_LIQUIDAR
+  FINALIZADO
+}
+
+// ==========================================
+// MODELOS / ENTIDADES
+// ==========================================
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(CLIENTE)
+  createdAt DateTime @default(now())
+
+  // Relaciones inversas de la base de datos
+  vehicles        Vehicle[]     // Si el usuario es CLIENTE, tiene vehículos
+  assignedOrders  WorkOrder[]   @relation("MechanicOrders") // Si es MECANICO, tiene órdenes
+  messages        ChatMessage[] // Mensajes enviados en los chats
+}
+
+model Vehicle {
+  id        String   @id @default(cuid())
+  plate     String   @unique
+  brand     String
+  model     String
+  year      Int
+  createdAt DateTime @default(now())
+  
+  // Relación con el Dueño (User con rol CLIENTE)
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  // Relación: Un vehículo puede tener múltiples órdenes a lo largo del tiempo
+  orders    WorkOrder[]
+}
+
+model WorkOrder {
+  id          String      @id @default(cuid())
+  description String      // Diagnóstico o motivo de ingreso
+  status      OrderStatus @default(PENDIENTE)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relación con el Vehículo inspeccionado
+  vehicleId   String
+  vehicle     Vehicle     @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  // Relación con el Mecánico asignado (User con rol MECANICO)
+  mechanicId  String
+  mechanic    User        @relation("MechanicOrders", fields: [mechanicId], references: [id])
+
+  // Relaciones hijas de la orden
+  items       ServiceItem[] // Repuestos y servicios añadidos a esta reparación
+  messages    ChatMessage[] // Mensajes de chat asociados a esta orden de trabajo
+}
+
+model ServiceItem {
+  id          String   @id @default(cuid())
+  description String   // Ej: "Cambio de pastillas de freno" o "Aceite sintético 10W40"
+  price       Float    // Costo unitario del repuesto o servicio de mano de obra
+  createdAt   DateTime @default(now())
+
+  // Relación estricta con la Orden de Trabajo madre
+  workOrderId String
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+}
+
+model ChatMessage {
+  id          String   @id @default(cuid())
+  text        String   // Contenido del mensaje
+  createdAt   DateTime @default(now())
+
+  // Relación con la Orden de Trabajo donde ocurre el chat
+  workOrderId String
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+
+  // Relación con el Remitente (Cualquiera de los 3 roles que envíe el mensaje)
+  senderId    String
+  sender      User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
 }

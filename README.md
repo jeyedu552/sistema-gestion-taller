@@ -78,7 +78,8 @@ Para cumplir con los requerimientos técnicos y mantener un alto estándar de re
 | Librería de Interfaz | **React** | Librería para construir interfaces de usuario dinámicas. |
 | Lenguaje | **TypeScript** | Permite tipado estricto y ayuda a prevenir errores durante el desarrollo. |
 | Base de Datos | **PostgreSQL / MySQL** | Base de datos relacional para almacenar la información del sistema. |
-| ORM | **Prisma** | Permite realizar consultas seguras a la base de datos. |
+| ORM | **Prisma 7** | Permite realizar consultas seguras a la base de datos (Requiere Driver Adapter). |
+| Driver Adapter | **@prisma/adapter-pg** | Adaptador oficial para conectar Prisma con PostgreSQL. |
 | Tiempo Real | **Socket.io** | Comunicación bidireccional mediante WebSockets. |
 | Estilos | **Tailwind CSS** | Framework de utilidades CSS para diseñar interfaces de forma rápida. |
 | Seguridad | **Bcrypt** | Encriptación de contraseñas de un solo sentido. |
@@ -185,7 +186,7 @@ Se utilizan para programar una tarea específica.
 Ejemplo:
 
 ```txt
-feature/login-auth
+feature/inicio-sesion-autenticacion
 ```
 
 ---
@@ -197,7 +198,7 @@ Ramas urgentes creadas para solucionar fallas detectadas en la rama de integraci
 Ejemplo:
 
 ```txt
-fix/error-validacion-login
+fix/error-validacion-inicio-sesion
 ```
 
 ---
@@ -268,6 +269,34 @@ Ejemplo:
 refactor: reorganizacion de servicios de ordenes de trabajo
 ```
 
+## Vinculación con Historias de Usuario
+
+Cada confirmación de código debe iniciar con un prefijo en minúsculas e incluir de forma obligatoria la referencia a la Historia de Usuario correspondiente en el `scope`.
+
+## Ejemplos de commits
+
+```bash
+feat(HU-01): implementacion de encriptacion bcrypt en registro de usuarios
+```
+
+```bash
+feat(HU-05): adicion de formulario dinámico de repuestos en el panel del mecanico
+```
+
+```bash
+fix(HU-03): correccion en la expresion regular de validacion de placas
+```
+
+```bash
+chore(deps): instalacion de dependencias de desarrollo para prisma ORM
+```
+
+```bash
+docs(readme): actualizacion de la estructura de carpetas y guias locales
+```
+
+---
+
 ## 4. Estructura del Proyecto
 
 Esta es la organización del código fuente adoptada por el equipo para garantizar modularidad y escalabilidad:
@@ -279,12 +308,13 @@ Esta es la organización del código fuente adoptada por el equipo para garantiz
 ├── public/                 # Recursos y activos estáticos (imágenes, iconos, logos)
 ├── src/
 │   ├── app/                # Enrutamiento basado en archivos (App Router de Next.js)
-│   │   ├── (auth)/         # Páginas públicas de Autenticación (SignIn, SignUp, Reset)
-│   │   ├── admin/          # Panel privado del taller (CRUD de vehículos, órdenes y personal)
-│   │   ├── client/         # Panel del cliente (Consulta de vehículos, estado y chat)
+│   │   ├── autenticacion/  # Páginas públicas de Autenticación (inicio-sesion, registro, etc.)
+│   │   ├── administrador/  # Panel privado del taller (CRUD de vehículos, órdenes y personal)
+│   │   ├── cliente/        # Panel del cliente (Consulta de vehículos, estado y chat)
+│   │   ├── mecanico/       # Panel del mecánico (Gestión de órdenes asignadas)
 │   │   ├── api/            # Backend: Controladores y endpoints HTTP del Monolito
-│   │   │   ├── auth/       # API para gestión de registros internos y sesiones
-│   │   │   ├── orders/     # API para operaciones CRUD de las órdenes de trabajo
+│   │   │   ├── autenticacion/ # API para gestión de registros internos y sesiones
+│   │   │   ├── ordenes/    # API para operaciones CRUD de las órdenes de trabajo
 │   │   │   └── chat/       # API para almacenar e invocar el historial de mensajes
 │   │   ├── layout.tsx      # Estructura y envoltura global del sitio
 │   │   └── page.tsx        # Pantalla de inicio o pasarela de acceso
@@ -302,67 +332,62 @@ Esta es la organización del código fuente adoptada por el equipo para garantiz
 
 ---
 
-## 5. Instrucciones de Levantamiento Local
+# 6. Instrucciones de Levantamiento Local
 
-Para ejecutar este proyecto en tu entorno local, sigue los siguientes pasos:
+Siga estos pasos en orden cronológico para inicializar el entorno de desarrollo en su computadora.
 
----
-
-### 1. Clonar el repositorio
+## 1. Clonar el repositorio y situarse en desarrollo
 
 ```bash
 git clone <url-del-repositorio>
 cd taller-automotriz
+git checkout develop
 ```
 
----
-
-### 2. Instalar dependencias con pnpm
+## 2. Instalar dependencias con `pnpm`
 
 ```bash
 pnpm install
 ```
 
----
+## 3. Configurar el entorno local
 
-### 3. Configurar el entorno
-
-Duplica el archivo de plantilla y configúralo con tus credenciales de base de datos locales:
+Duplica el archivo de plantilla y configúralo con tus credenciales locales de base de datos:
 
 ```bash
 cp .env.example .env
 ```
 
-Luego edita el archivo `.env` con los datos correspondientes de tu base de datos.
+Abra el archivo `.env` resultante y modifique la propiedad `DATABASE_URL` con el usuario y contraseña de su PostgreSQL local.
 
-Ejemplo:
+## 4. Ejecutar migraciones de la base de datos
 
-```env
-DATABASE_URL="postgresql://usuario:contraseña@localhost:5432/taller_automotriz"
-```
-
----
-
-### 4. Ejecutar migraciones de la base de datos
+Este comando creará sus tablas locales en PostgreSQL y aplicará las relaciones jerárquicas:
 
 ```bash
-pnpm dlx prisma migrate dev
+pnpm dlx prisma migrate dev --name inicializacion_sistema
 ```
 
-Este comando aplica las migraciones definidas en Prisma y prepara la estructura de la base de datos.
+## 5. Ejecutar la semilla (Seed) de datos
 
----
+Para inyectar al Administrador Maestro en su sistema, ejecute el siguiente comando:
 
-### 6. Iniciar el servidor de desarrollo
+```bash
+pnpm dlx prisma db seed
+```
+
+## 6. Iniciar el servidor de desarrollo
 
 ```bash
 pnpm dev
 ```
 
----
+## 7. Abrir el proyecto e iniciar sesión
 
-### 6. Abrir el proyecto en el navegador
-Una vez iniciado el servidor, abre el navegador y entra a:
+Abra la siguiente dirección en su navegador web:
 
-```txt
+```bash
 http://localhost:3000
+```
+
+Para acceder al panel de administración completo, utilice las credenciales inyectadas por la semilla. semilla.

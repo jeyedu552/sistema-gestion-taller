@@ -20,6 +20,7 @@
     "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
+    "@google/gemini-cli": "^0.42.0",
     "@tailwindcss/postcss": "^4",
     "@types/bcrypt": "^6.0.0",
     "@types/node": "^20",

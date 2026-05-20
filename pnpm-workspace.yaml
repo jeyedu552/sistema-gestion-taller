@@ -1,7 +1,9 @@
 allowBuilds:
+  '@github/keytar': true
   '@prisma/engines': true
   bcrypt: true
-  esbuild: set this to true or false
+  esbuild: true
+  node-pty: true
   prisma: true
   sharp: false
   unrs-resolver: false

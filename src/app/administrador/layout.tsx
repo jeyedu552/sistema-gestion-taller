@@ -40,21 +40,17 @@ export default function AdminLayout({
             <div className="text-slate-400 text-[11px] font-bold uppercase tracking-[0.1em] mb-4 ml-1">
               Gestión Terminal
             </div>
-            <a href="/administrador" className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-white bg-white/10 rounded-lg transition-colors">
+            <a href="/administrador" className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
               <span className="material-symbols-outlined text-lg">dashboard</span>
               Dashboard
+            </a>
+            <a href="/administrador/usuarios" className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-white bg-white/10 rounded-lg transition-colors">
+              <span className="material-symbols-outlined text-lg">group</span>
+              Usuarios
             </a>
             <a href="#" className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
               <span className="material-symbols-outlined text-lg">receipt_long</span>
               Órdenes
-            </a>
-            <a href="#" className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
-              <span className="material-symbols-outlined text-lg">inventory_2</span>
-              Inventario
-            </a>
-            <a href="#" className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
-              <span className="material-symbols-outlined text-lg">group</span>
-              Usuarios
             </a>
           </nav>
         </div>

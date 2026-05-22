@@ -30,6 +30,14 @@ export async function POST(request: Request) {
       );
     }
 
+    // Verificar si el usuario está activo (HU-02)
+    if (user.isActive === false) {
+      return NextResponse.json(
+        { error: 'Su cuenta ha sido desactivada. Contacte al administrador.' },
+        { status: 403 }
+      );
+    }
+
     // Validar la contraseña con bcrypt (HU-01 Regla Técnica)
     const passwordMatch = await bcrypt.compare(password, user.password);
 

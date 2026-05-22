@@ -12,7 +12,7 @@ para acceder únicamente al panel correspondiente a mi rol dentro del sistema.
 
 - El sistema debe permitir el inicio de sesión mediante correo electrónico y contraseña.
 - El sistema debe validar las credenciales ingresadas antes de permitir el acceso.
-- La ruta del usuario con rol **ADMIN** debe redirigir al panel `/admin`.
+- La ruta del usuario con rol **ADMIN** debe redirigir al panel `/administrador`.
 - La ruta del usuario con rol **MECANICO** debe redirigir al panel `/mecanico`.
 - La ruta del usuario con rol **CLIENTE** debe redirigir al panel `/cliente`.
 - El sistema debe redirigir al login cualquier intento de acceso no autenticado a rutas protegidas.

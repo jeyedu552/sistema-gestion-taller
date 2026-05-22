@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "ia": "gemini"
+    "gemini": "gemini"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",

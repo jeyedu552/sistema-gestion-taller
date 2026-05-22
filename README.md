@@ -297,9 +297,9 @@ docs(readme): actualizacion de la estructura de carpetas y guias locales
 
 ---
 
-## 4. Estructura del Proyecto
+## 4. Estructura del Proyecto e Inyección de Capas
 
-Esta es la organización del código fuente adoptada por el equipo para garantizar modularidad y escalabilidad:
+El proyecto sigue una arquitectura lógica por capas distribuida en la carpeta `src`. Al generar o modificar código, se deben respetar estrictamente estas responsabilidades:
 
 ```plaintext
 /
@@ -307,27 +307,22 @@ Esta es la organización del código fuente adoptada por el equipo para garantiz
 │   └── schema.prisma       # Modelos y entidades de la Base de Datos Relacional
 ├── public/                 # Recursos y activos estáticos (imágenes, iconos, logos)
 ├── src/
-│   ├── app/                # Enrutamiento basado en archivos (App Router de Next.js)
-│   │   ├── autenticacion/  # Páginas públicas de Autenticación (inicio-sesion, registro, etc.)
-│   │   ├── administrador/  # Panel privado del taller (CRUD de vehículos, órdenes y personal)
-│   │   ├── cliente/        # Panel del cliente (Consulta de vehículos, estado y chat)
-│   │   ├── mecanico/       # Panel del mecánico (Gestión de órdenes asignadas)
-│   │   ├── api/            # Backend: Controladores y endpoints HTTP del Monolito
-│   │   │   ├── autenticacion/ # API para gestión de registros internos y sesiones
-│   │   │   ├── ordenes/    # API para operaciones CRUD de las órdenes de trabajo
-│   │   │   └── chat/       # API para almacenar e invocar el historial de mensajes
-│   │   ├── layout.tsx      # Estructura y envoltura global del sitio
-│   │   └── page.tsx        # Pantalla de inicio o pasarela de acceso
-│   ├── components/         # Componentes visuales de React reutilizables
-│   │                       # Botones, Tablas, Modales, etc.
-│   ├── lib/                # Inicializaciones maestras e instancias
-│   │                       # PrismaClient, Config Socket.io, etc.
-│   ├── services/           # Capa lógica aislada para consumo de APIs internas
-│   └── types/              # Definiciones, tipos e interfaces globales de TypeScript
+│   ├── app/                # Capa de Enrutamiento y Controladores
+│   │                       # Páginas, Endpoints (API Routes) y Server Actions.
+│   ├── components/         # Capa de Presentación (UI)
+│   │                       # Componentes visuales, botones y formularios (React + Tailwind).
+│   ├── services/           # Capa de Lógica de Negocio
+│   │                       # Cálculos de órdenes, validaciones pesadas y reglas del taller automotriz.
+│   ├── lib/                # Capa de Acceso a Datos e Infraestructura
+│   │                       # Instancia única de Prisma DB y clientes externos.
+│   ├── types/              # Capa de Definiciones
+│   │                       # Interfaces, tipos y esquemas globales de TypeScript.
+│   └── middleware.ts       # Capa de Seguridad Global
+│                           # Control de acceso, protección de rutas y validación de sesiones.
 ├── .env.example            # Plantilla pública de referencia para variables de entorno locales
 ├── .gitignore              # Archivos y credenciales estrictamente excluidos del repositorio
-├── package.json            # Gestión de dependencias, metadatos y scripts de arranque del sistema
-└── pnpm-lock.yaml          # Historial estricto y bloqueado de versiones gestionado por pnpm
+├── package.json            # Gestión de dependencias y scripts
+└── pnpm-lock.yaml          # Historial de versiones gestionado por pnpm
 ```
 
 ---

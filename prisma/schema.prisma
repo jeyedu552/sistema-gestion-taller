@@ -51,6 +51,7 @@ model Vehicle {
   brand     String
   model     String
   year      Int
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   
   // Relación con el Dueño (User con rol CLIENTE)

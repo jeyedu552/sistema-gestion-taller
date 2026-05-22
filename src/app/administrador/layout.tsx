@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 
@@ -21,6 +21,12 @@ export default function AdminLayout({
   const pathname = usePathname();
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Sincronizar el término de búsqueda con la URL al navegar
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setSearchTerm(params.get('q') || '');
+  }, [pathname]);
+
   const handleLogout = async () => {
     try {
       const response = await fetch('/api/autenticacion', { method: 'DELETE' });
@@ -35,21 +41,27 @@ export default function AdminLayout({
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchTerm.trim()) {
-      router.push(`/administrador/usuarios?q=${encodeURIComponent(searchTerm.trim())}`);
+    const query = searchTerm.trim();
+    
+    // Determinar a qué página enviar la búsqueda basado en la ruta actual
+    let targetPath = '/administrador/usuarios';
+    if (pathname.includes('/vehiculos')) targetPath = '/administrador/vehiculos';
+    if (pathname.includes('/ordenes')) targetPath = '/administrador/ordenes';
+
+    if (query) {
+      router.push(`${targetPath}?q=${encodeURIComponent(query)}`);
     } else {
-      router.push('/administrador/usuarios');
+      router.push(targetPath);
     }
   };
 
   const navLinks = [
     { href: '/administrador', label: 'Dashboard', icon: 'dashboard' },
     { href: '/administrador/ordenes', label: 'Órdenes de Servicio', icon: 'trolley' },
-    { href: '/administrador/usuarios', label: 'Clientes', icon: 'group' },
+    { href: '/administrador/usuarios', label: 'Usuarios', icon: 'group' },
+    { href: '/administrador/vehiculos', label: 'Vehículos', icon: 'directions_car' },
     { href: '/administrador/mecanicos', label: 'Mecánicos', icon: 'engineering' },
     { href: '/administrador/inventario', label: 'Inventario', icon: 'inventory_2' },
-    { href: '/administrador/reportes', label: 'Reportes', icon: 'assessment' },
-    { href: '/administrador/configuracion', label: 'Configuración', icon: 'settings' },
   ];
 
   return (
@@ -110,7 +122,7 @@ export default function AdminLayout({
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px] group-focus-within:text-primary transition-colors">search</span>
               <input 
                 className="w-full bg-slate-50 border border-slate-100 rounded-lg pl-9 pr-9 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/5 focus:border-primary/30 transition-all outline-none placeholder:text-slate-400 text-slate-700 font-medium" 
-                placeholder="Buscar por nombre o correo..." 
+                placeholder={pathname.includes('vehiculos') ? "Buscar placa, marca o dueño..." : "Buscar por nombre o correo..."}
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -120,7 +132,8 @@ export default function AdminLayout({
                   type="button"
                   onClick={() => {
                     setSearchTerm('');
-                    router.push('/administrador/usuarios');
+                    const target = pathname.includes('vehiculos') ? '/administrador/vehiculos' : '/administrador/usuarios';
+                    router.push(target);
                   }}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500 transition-colors"
                 >

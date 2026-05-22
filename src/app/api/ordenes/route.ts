@@ -127,3 +127,35 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }
+
+/**
+ * Actualizar descripción de una orden (ADMIN).
+ */
+export async function PATCH(request: Request) {
+  if (!(await isAdmin())) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+  }
+
+  try {
+    const { id, description } = await request.json();
+
+    if (!id || !description) {
+      return NextResponse.json({ error: 'ID y descripción son requeridos' }, { status: 400 });
+    }
+
+    const updatedOrder = await prisma.workOrder.update({
+      where: { id },
+      data: { description },
+      include: {
+        vehicle: { select: { plate: true, brand: true, model: true } },
+        mechanic: { select: { name: true } }
+      }
+    });
+
+    return NextResponse.json(updatedOrder);
+  } catch (error) {
+    console.error('Error al actualizar orden:', error);
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+  }
+}
+

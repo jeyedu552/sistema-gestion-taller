@@ -1,0 +1,86 @@
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import bcrypt from 'bcrypt';
+import { cookies } from 'next/headers';
+
+/**
+ * Endpoint para autenticación de usuarios.
+ * Capa: App Router - API Routes (HU-01)
+ */
+export async function POST(request: Request) {
+  try {
+    const { email, password } = await request.json();
+
+    if (!email || !password) {
+      return NextResponse.json(
+        { error: 'Email y contraseña son requeridos' },
+        { status: 400 }
+      );
+    }
+
+    // Buscar el usuario en la base de datos
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Credenciales inválidas' },
+        { status: 401 }
+      );
+    }
+
+    // Validar la contraseña con bcrypt (HU-01 Regla Técnica)
+    const passwordMatch = await bcrypt.compare(password, user.password);
+
+    if (!passwordMatch) {
+      return NextResponse.json(
+        { error: 'Credenciales inválidas' },
+        { status: 401 }
+      );
+    }
+
+    // Crear la sesión mediante una cookie (Simplificado para este prototipo)
+    // En una implementación real, se usaría un token firmado (JWT) o una sesión en BD
+    const cookieStore = await cookies();
+    
+    // Almacenamos el ID y el Rol en la cookie para que el middleware pueda leerlo
+    const sessionData = JSON.stringify({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    });
+
+    cookieStore.set('session', sessionData, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24, // 1 día
+      path: '/',
+    });
+
+    return NextResponse.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error('Error en autenticación:', error);
+    return NextResponse.json(
+      { error: 'Error interno del servidor' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * Endpoint para cerrar sesión.
+ */
+export async function DELETE() {
+  const cookieStore = await cookies();
+  cookieStore.delete('session');
+  return NextResponse.json({ message: 'Sesión cerrada' });
+}

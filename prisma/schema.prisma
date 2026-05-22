@@ -36,6 +36,7 @@ model User {
   name      String
   role      Role     @default(CLIENTE)
   isActive  Boolean  @default(true)
+  lastLogin DateTime?
   createdAt DateTime @default(now())
 
   // Relaciones inversas de la base de datos

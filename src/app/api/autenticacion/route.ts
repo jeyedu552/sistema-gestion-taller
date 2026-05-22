@@ -48,6 +48,12 @@ export async function POST(request: Request) {
       );
     }
 
+    // Actualizar la última conexión (HU-02)
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLogin: new Date() }
+    });
+
     // Crear la sesión mediante una cookie (Simplificado para este prototipo)
     // En una implementación real, se usaría un token firmado (JWT) o una sesión en BD
     const cookieStore = await cookies();

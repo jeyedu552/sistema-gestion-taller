@@ -39,6 +39,7 @@ export async function GET() {
         name: true,
         role: true,
         isActive: true,
+        lastLogin: true,
         createdAt: true,
       },
       orderBy: {

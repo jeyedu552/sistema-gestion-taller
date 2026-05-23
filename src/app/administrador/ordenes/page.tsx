@@ -25,7 +25,7 @@ interface WorkOrder {
 }
 
 /**
- * Componente principal con Suspense para manejar searchParams (HU-04)
+ * Componente principal con Suspense para manejar searchParams
  */
 export default function WorkOrdersPage() {
   return (
@@ -40,6 +40,10 @@ function WorkOrdersContent() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [mechanics, setMechanics] = useState<Mechanic[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Evitar error de hidratación renderizando fechas solo en el cliente
+  const [isClient, setIsClient] = useState(false);
+  useEffect(() => { setIsClient(true); }, []);
   
   const searchParams = useSearchParams();
   const urlQuery = searchParams.get('q') || '';
@@ -60,15 +64,22 @@ function WorkOrdersContent() {
 
   useEffect(() => {
     fetchData();
+    
+    // Polling silencioso para el Administrador (cada 15s)
+    const interval = setInterval(() => {
+      fetchData(true);
+    }, 15000);
+
+    return () => clearInterval(interval);
   }, []);
 
-  const fetchData = async () => {
+  const fetchData = async (silent = false) => {
     try {
-      setIsLoading(true);
+      if (!silent) setIsLoading(true);
       const [oRes, vRes, mRes] = await Promise.all([
-        fetch('/api/ordenes'),
-        fetch('/api/vehiculos'),
-        fetch('/api/usuarios')
+        fetch(`/api/ordenes?t=${Date.now()}`, { cache: 'no-store' }),
+        fetch(`/api/vehiculos?t=${Date.now()}`, { cache: 'no-store' }),
+        fetch(`/api/usuarios?t=${Date.now()}`, { cache: 'no-store' })
       ]);
 
       if (!oRes.ok || !vRes.ok || !mRes.ok) throw new Error('Error al cargar datos');
@@ -83,7 +94,7 @@ function WorkOrdersContent() {
     } catch (err) {
       console.error(err);
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   };
 
@@ -127,6 +138,26 @@ function WorkOrdersContent() {
       mechanicId: order.mechanic.id
     });
     setShowModal(true);
+  };
+
+  const handleFinalizeOrder = async (orderId: string) => {
+    if (!confirm('¿Deseas cerrar y finalizar esta orden definitivamente? No podrá ser editada después.')) return;
+    
+    try {
+      // Mock de HU-08: Actualizar estado a FINALIZADO
+      // Reutilizamos el endpoint de mecánico o creamos uno de admin luego, por ahora lo hacemos directo
+      const response = await fetch(`/api/mecanico/ordenes/${orderId}/estado`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'FINALIZADO' })
+      });
+      
+      if (response.ok) {
+        fetchData(true);
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -230,48 +261,73 @@ function WorkOrdersContent() {
               ) : paginatedOrders.length === 0 ? (
                 <tr><td colSpan={6} className="px-6 py-12 text-center text-slate-400 text-xs font-medium">No hay órdenes registradas.</td></tr>
               ) : (
-                paginatedOrders.map(order => (
-                  <tr key={order.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="px-6 py-4">
-                      <span className="text-[13px] font-black text-primary font-mono tracking-tight">
-                        {order.vehicle.plate}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <div className="text-xs font-bold text-slate-800 uppercase leading-none">{order.vehicle.brand}</div>
-                      <div className="text-[10px] font-bold text-slate-400 mt-1 uppercase">{order.vehicle.model}</div>
-                    </td>
-                    <td className="px-6 py-4 text-left">
-                      <p className="text-[11px] font-medium text-slate-700 line-clamp-2 leading-relaxed">
-                        {order.description}
-                      </p>
-                    </td>
-                    <td className="px-6 py-4 text-left">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-bold text-slate-800 truncate">{order.mechanic.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex flex-col items-end">
-                        <span className={`text-[10px] font-black tracking-tight ${getStatusStyle(order.status)}`}>
-                          {order.status === 'EN_PROGRESO' ? 'EN TALLER' : order.status.replace(/_/g, ' ')}
+                paginatedOrders.map(order => {
+                  const isLocked = order.status === 'FINALIZADO';
+                  const isReadyToLiquidate = order.status === 'LISTO_PARA_LIQUIDAR';
+                  return (
+                    <tr key={order.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="px-6 py-4">
+                        <span className={`text-[13px] font-black font-mono tracking-tight ${isLocked ? 'text-slate-400 line-through' : 'text-primary'}`}>
+                          {order.vehicle.plate}
                         </span>
-                        <span className="text-[9px] font-bold text-slate-400 mt-1 uppercase">
-                          {new Date(order.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <button 
-                        onClick={() => handleOpenEdit(order)}
-                        className="p-1.5 rounded-md text-primary border border-slate-200 hover:bg-blue-50 transition-colors mx-auto block"
-                        title="Editar Descripción"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">edit</span>
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <div className={`text-xs font-bold uppercase leading-none ${isLocked ? 'text-slate-400 line-through' : 'text-slate-800'}`}>{order.vehicle.brand}</div>
+                        <div className="text-[10px] font-bold text-slate-400 mt-1 uppercase">{order.vehicle.model}</div>
+                      </td>
+                      <td className="px-6 py-4 text-left">
+                        <p className={`text-[11px] font-medium line-clamp-2 leading-relaxed ${isLocked ? 'text-slate-400 italic' : 'text-slate-700'}`}>
+                          {order.description}
+                        </p>
+                      </td>
+                      <td className="px-6 py-4 text-left">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[11px] font-bold truncate ${isLocked ? 'text-slate-400' : 'text-slate-800'}`}>{order.mechanic.name}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex flex-col items-end">
+                          <span className={`text-[10px] font-black tracking-tight ${getStatusStyle(order.status)}`}>
+                            {order.status === 'EN_PROGRESO' ? 'EN TALLER' : order.status.replace(/_/g, ' ')}
+                          </span>
+                          {isClient && (
+                            <span className="text-[9px] font-bold text-slate-400 mt-1 uppercase">
+                              {new Date(order.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <div className="flex justify-center items-center gap-2">
+                          {!isLocked ? (
+                            <>
+                              <button 
+                                onClick={() => handleOpenEdit(order)}
+                                className="p-1.5 rounded-md text-primary border border-slate-200 hover:bg-blue-50 transition-all shadow-sm active:scale-95"
+                                title="Editar Descripción"
+                              >
+                                <span className="material-symbols-outlined text-[18px]">edit</span>
+                              </button>
+                              {isReadyToLiquidate && (
+                                <button 
+                                  onClick={() => handleFinalizeOrder(order.id)}
+                                  className="p-1.5 rounded-md text-green-600 border border-green-100 bg-green-50 hover:bg-green-100 transition-all shadow-sm active:scale-95"
+                                  title="Liquidar y Cerrar Orden"
+                                >
+                                  <span className="material-symbols-outlined text-[18px]">fact_check</span>
+                                </button>
+                              )}
+                            </>
+                          ) : (
+                            <span className="material-symbols-outlined text-slate-300 cursor-not-allowed" title="Orden Finalizada y Bloqueada">
+                              lock
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -377,7 +433,7 @@ function WorkOrdersContent() {
                 <button 
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 py-2.5 text-xs font-bold text-white bg-primary rounded-lg hover:bg-primary-container shadow-lg shadow-primary/20 disabled:opacity-50 transition-all"
+                  className="flex-1 py-2.5 text-xs font-bold text-white bg-primary rounded-lg hover:bg-primary/90 shadow-lg shadow-primary/20 disabled:opacity-50 transition-all"
                 >
                   {isSubmitting ? 'Procesando...' : (isEditing ? 'Guardar Cambios' : 'Abrir Orden')}
                 </button>

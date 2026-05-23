@@ -143,6 +143,19 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'ID y descripción son requeridos' }, { status: 400 });
     }
 
+    // Verificar si la orden ya está finalizada
+    const currentOrder = await prisma.workOrder.findUnique({
+      where: { id },
+      select: { status: true }
+    });
+
+    if (currentOrder?.status === 'FINALIZADO') {
+      return NextResponse.json(
+        { error: 'No se puede editar una orden que ya ha sido finalizada' },
+        { status: 400 }
+      );
+    }
+
     const updatedOrder = await prisma.workOrder.update({
       where: { id },
       data: { description },

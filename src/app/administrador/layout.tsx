@@ -6,11 +6,6 @@ import Link from 'next/link';
 
 /**
  * Layout Principal para el Panel de Administración.
- * Optimizado para evitar el efecto de "mucho zoom":
- * - Reducción de padding global (p-8 -> p-6)
- * - Reducción de altura de cabecera (h-16 -> h-14)
- * - Reducción de anchos de sidebar (w-60 -> w-56)
- * - Tipografías más pequeñas y balanceadas.
  */
 export default function AdminLayout({
   children,
@@ -20,9 +15,27 @@ export default function AdminLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [searchTerm, setSearchTerm] = useState('');
+  const [userName, setUserName] = useState('Administrador');
 
-  // Sincronizar el término de búsqueda con la URL al navegar
   useEffect(() => {
+    // Obtener información de sesión desde la API segura
+    const fetchSession = async () => {
+      try {
+        const response = await fetch('/api/autenticacion');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.authenticated) {
+            setUserName(data.user.name);
+          }
+        }
+      } catch (error) {
+        console.error('Error al recuperar sesión:', error);
+      }
+    };
+
+    fetchSession();
+    
+    // Sincronizar el término de búsqueda con la URL
     const params = new URLSearchParams(window.location.search);
     setSearchTerm(params.get('q') || '');
   }, [pathname]);
@@ -42,8 +55,6 @@ export default function AdminLayout({
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const query = searchTerm.trim();
-    
-    // Determinar a qué página enviar la búsqueda basado en la ruta actual
     let targetPath = '/administrador/usuarios';
     if (pathname.includes('/vehiculos')) targetPath = '/administrador/vehiculos';
     if (pathname.includes('/ordenes')) targetPath = '/administrador/ordenes';
@@ -62,16 +73,18 @@ export default function AdminLayout({
     { href: '/administrador/vehiculos', label: 'Vehículos', icon: 'directions_car' },
     { href: '/administrador/mecanicos', label: 'Mecánicos', icon: 'engineering' },
     { href: '/administrador/inventario', label: 'Inventario', icon: 'inventory_2' },
+    { href: '/administrador/reportes', label: 'Reportes', icon: 'assessment' },
+    { href: '/administrador/configuracion', label: 'Configuración', icon: 'settings' },
   ];
 
   return (
     <div className="bg-slate-50/50 text-slate-900 min-h-screen font-sans flex text-[13px]">
       
-      {/* Barra Lateral - Reducida a 224px (w-56) */}
-      <aside className="w-56 h-screen fixed left-0 top-0 bg-white border-r border-slate-100 flex flex-col py-5 z-50">
+      {/* Sidebar - Deep Navy (#172554) */}
+      <aside className="w-56 h-screen fixed left-0 top-0 bg-primary-container text-white flex flex-col py-5 z-50 border-r border-white/5">
         <div className="mb-6 px-6">
-          <h1 className="text-lg font-bold text-primary tracking-tight">AutoCore Pro</h1>
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Enterprise Workshop</p>
+          <h1 className="text-lg font-bold tracking-tight">AutoCore Pro</h1>
+          <p className="text-[10px] text-on-primary-container font-bold uppercase tracking-widest mt-0.5">Enterprise Workshop</p>
         </div>
         
         <nav className="flex-1 space-y-0.5 px-3">
@@ -83,11 +96,11 @@ export default function AdminLayout({
                 href={link.href} 
                 className={`flex items-center gap-3 px-3 py-2 rounded-md transition-all duration-200 ${
                   isActive 
-                    ? 'bg-blue-50/80 text-primary font-bold shadow-sm border border-blue-100/50' 
-                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-semibold' 
+                    ? 'bg-white/10 text-white font-bold shadow-sm' 
+                    : 'text-on-primary-container hover:bg-white/5 hover:text-white font-semibold' 
                 }`}
               >
-                <span className={`material-symbols-outlined text-[18px] ${isActive ? 'text-primary' : 'text-slate-400'}`}>
+                <span className={`material-symbols-outlined text-[18px] ${isActive ? 'text-white' : 'text-on-primary-container'}`}>
                   {link.icon}
                 </span>
                 <span className="text-[13px]">{link.label}</span>
@@ -96,27 +109,26 @@ export default function AdminLayout({
           })}
         </nav>
 
-        <div className="mt-auto pt-4 border-t border-slate-100 px-3 space-y-0.5">
-          <Link href="/administrador/perfil" className="flex items-center gap-3 px-3 py-2 rounded-md text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-semibold transition-colors">
-            <span className="material-symbols-outlined text-[18px] text-slate-400">account_circle</span>
+        <div className="mt-auto pt-4 border-t border-white/10 px-3 space-y-0.5">
+          <Link href="/administrador/perfil" className="flex items-center gap-3 px-3 py-2 rounded-md text-on-primary-container hover:bg-white/5 hover:text-white font-semibold transition-colors">
+            <span className="material-symbols-outlined text-[18px]">account_circle</span>
             <span className="text-[13px]">Mi Perfil</span>
           </Link>
           <button 
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-red-600 hover:bg-red-50 font-bold transition-colors"
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-red-300 hover:bg-red-500/10 font-bold transition-colors"
           >
-            <span className="material-symbols-outlined text-[18px] text-red-500">logout</span>
+            <span className="material-symbols-outlined text-[18px]">logout</span>
             <span className="text-[13px]">Cerrar Sesión</span>
           </button>
         </div>
       </aside>
 
-      {/* Area de Contenido - Ajuste de margen ml-56 */}
+      {/* Area de Contenido */}
       <div className="flex-1 ml-56 flex flex-col min-h-screen">
         
-        {/* Barra Superior - Altura h-14 */}
+        {/* Barra Superior */}
         <header className="h-14 sticky top-0 bg-white border-b border-slate-100 flex justify-between items-center px-6 z-40">
-          
           <div className="flex items-center gap-4 w-1/2">
             <form onSubmit={handleSearch} className="relative w-full max-w-sm group">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px] group-focus-within:text-primary transition-colors">search</span>
@@ -150,17 +162,17 @@ export default function AdminLayout({
             <div className="h-6 w-[1px] bg-slate-100"></div>
             <div className="flex items-center gap-2.5 cursor-pointer hover:bg-slate-50 transition-colors p-1 rounded-md">
               <div className="text-right hidden lg:block">
-                <p className="text-[12px] font-bold text-slate-800 leading-tight">Admin Root</p>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Super Admin</p>
+                <p className="text-[12px] font-bold text-slate-800 leading-tight">{userName || 'Administrador'}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Administrador</p>
               </div>
-              <div className="w-7 h-7 rounded bg-primary flex items-center justify-center text-white text-[10px] font-black shadow-sm">
-                AD
+              <div className="w-7 h-7 rounded bg-primary flex items-center justify-center text-white text-[10px] font-black shadow-sm uppercase">
+                {(userName || 'AD').substring(0, 2)}
               </div>
             </div>
           </div>
         </header>
 
-        {/* Main Content - Reducción de padding global */}
+        {/* Main Content */}
         <main className="p-6 flex-1 bg-slate-50/10">
           <div className="max-w-[1280px] mx-auto h-full">
             {children}

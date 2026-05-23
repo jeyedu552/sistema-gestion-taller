@@ -58,11 +58,12 @@ export async function POST(request: Request) {
     // En una implementación real, se usaría un token firmado (JWT) o una sesión en BD
     const cookieStore = await cookies();
     
-    // Almacenamos el ID y el Rol en la cookie para que el middleware pueda leerlo
+    // Almacenamos el ID, el Rol y el Nombre en la cookie para que los layouts puedan leerlo
     const sessionData = JSON.stringify({
       id: user.id,
       email: user.email,
       role: user.role,
+      name: user.name,
     });
 
     cookieStore.set('session', sessionData, {
@@ -87,6 +88,32 @@ export async function POST(request: Request) {
       { error: 'Error interno del servidor' },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * Endpoint para obtener la sesión actual (GET).
+ */
+export async function GET() {
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get('session');
+
+  if (!sessionCookie) {
+    return NextResponse.json({ authenticated: false }, { status: 401 });
+  }
+
+  try {
+    const session = JSON.parse(sessionCookie.value);
+    return NextResponse.json({
+      authenticated: true,
+      user: {
+        name: session.name,
+        email: session.email,
+        role: session.role
+      }
+    });
+  } catch {
+    return NextResponse.json({ authenticated: false }, { status: 401 });
   }
 }
 

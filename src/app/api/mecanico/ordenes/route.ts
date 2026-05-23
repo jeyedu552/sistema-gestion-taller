@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Endpoint para obtener las órdenes asignadas a un mecánico.
  * Capa: App Router - API Routes (HU-05)

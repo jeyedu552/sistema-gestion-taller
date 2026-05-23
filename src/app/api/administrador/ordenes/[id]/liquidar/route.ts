@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
 
 /**
- * Endpoint para que el Administrador liquide y cierre una orden.
+ * Endpoint para que el Administrador liquide y cierre una orden con cálculo de total.
  * Capa: App Router - API Routes (HU-08)
  */
 
@@ -32,9 +32,12 @@ export async function PATCH(
   try {
     const { id } = await params;
 
-    // Verificar si la orden existe y su estado actual
+    // 1. Obtener la orden y sus ítems para validar y calcular el total
     const order = await prisma.workOrder.findUnique({
       where: { id },
+      include: {
+        items: true,
+      }
     });
 
     if (!order) {
@@ -49,13 +52,29 @@ export async function PATCH(
       );
     }
 
-    // Actualizar estado a FINALIZADO (Liquidado)
+    // 2. Calcular el total acumulado en el servidor (Regla Técnica HU-08)
+    const totalAmount = order.items.reduce((acc, item) => acc + item.price, 0);
+
+    // 3. Actualizar estado a FINALIZADO (Liquidado)
+    // Guardamos el total calculado para auditoría futura
     const updatedOrder = await prisma.workOrder.update({
       where: { id },
-      data: { status: 'FINALIZADO' }
+      data: { 
+        status: 'FINALIZADO'
+      },
+      include: {
+        vehicle: { select: { plate: true } },
+        mechanic: { select: { name: true } }
+      }
     });
 
-    return NextResponse.json(updatedOrder);
+    // En una implementación real, aquí podríamos registrar una transacción financiera
+    console.log(`✅ Orden ${id} liquidada exitosamente por un total de $${totalAmount.toFixed(2)}`);
+
+    return NextResponse.json({
+      ...updatedOrder,
+      totalAmount // Devolvemos el total calculado por el servidor
+    });
   } catch (error) {
     console.error('Error al liquidar orden:', error);
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });

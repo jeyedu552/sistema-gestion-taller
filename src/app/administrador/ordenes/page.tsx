@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { OrderChat } from '@/components/chat/order-chat';
 
 interface Vehicle {
   id: string;
@@ -25,7 +26,7 @@ interface WorkOrder {
 }
 
 /**
- * Componente principal con Suspense para manejar searchParams (HU-04)
+ * Componente principal con Suspense para manejar searchParams (HU-04/09)
  */
 export default function WorkOrdersPage() {
   return (
@@ -51,10 +52,15 @@ function WorkOrdersContent() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
-  // Modal State
+  // Modal States
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<WorkOrder | null>(null);
+  
+  // Información del usuario logueado (Admin)
+  const [currentUser, setCurrentUser] = useState<{id: string, role: string} | null>(null);
+
   const [formData, setFormData] = useState({
     description: '',
     vehicleId: '',
@@ -64,8 +70,8 @@ function WorkOrdersContent() {
 
   useEffect(() => {
     fetchData();
+    fetchSession();
     
-    // Polling silencioso para el Administrador (cada 15s)
     const interval = setInterval(() => {
       fetchData(true);
     }, 15000);
@@ -95,6 +101,20 @@ function WorkOrdersContent() {
       console.error(err);
     } finally {
       if (!silent) setIsLoading(false);
+    }
+  };
+
+  const fetchSession = async () => {
+    try {
+      const response = await fetch('/api/autenticacion');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.authenticated) {
+          setCurrentUser({ id: data.user.id, role: data.user.role });
+        }
+      }
+    } catch (error) {
+      console.error(error);
     }
   };
 
@@ -131,13 +151,18 @@ function WorkOrdersContent() {
 
   const handleOpenEdit = (order: WorkOrder) => {
     setIsEditing(true);
-    setCurrentOrderId(order.id);
+    setSelectedOrder(order);
     setFormData({
       description: order.description,
       vehicleId: order.vehicle.id,
       mechanicId: order.mechanic.id
     });
     setShowModal(true);
+  };
+
+  const handleOpenChat = (order: WorkOrder) => {
+    setSelectedOrder(order);
+    setShowChatModal(true);
   };
 
   const handleFinalizeOrder = async (orderId: string) => {
@@ -151,7 +176,6 @@ function WorkOrdersContent() {
       
       if (response.ok) {
         const updated = await response.json();
-        // Actualizar el estado localmente para reflejar el cambio al instante
         setOrders(orders.map(o => o.id === orderId ? { ...o, status: updated.status } : o));
       } else {
         const errorData = await response.json();
@@ -170,7 +194,7 @@ function WorkOrdersContent() {
       const url = '/api/ordenes';
       const method = isEditing ? 'PATCH' : 'POST';
       const body = isEditing 
-        ? { id: currentOrderId, description: formData.description }
+        ? { id: selectedOrder?.id, description: formData.description }
         : formData;
 
       const response = await fetch(url, {
@@ -244,7 +268,7 @@ function WorkOrdersContent() {
         </div>
       </div>
 
-      {/* Tabla de Órdenes - Distribución Uniforme */}
+      {/* Tabla de Órdenes */}
       <div className="bg-white border border-slate-100 shadow-sm rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left table-fixed">
@@ -252,10 +276,10 @@ function WorkOrdersContent() {
               <tr className="bg-slate-50/50">
                 <th className="w-[12%] px-6 py-4 text-slate-500 text-[10px] font-bold uppercase tracking-widest border-b border-slate-50 text-left">Placa</th>
                 <th className="w-[18%] px-6 py-4 text-slate-500 text-[10px] font-bold uppercase tracking-widest border-b border-slate-50 text-center">Modelo / Marca</th>
-                <th className="w-[30%] px-6 py-4 text-slate-500 text-[10px] font-bold uppercase tracking-widest border-b border-slate-50 text-left">Descripción del Fallo</th>
+                <th className="w-[25%] px-6 py-4 text-slate-500 text-[10px] font-bold uppercase tracking-widest border-b border-slate-50 text-left">Descripción del Fallo</th>
                 <th className="w-[15%] px-6 py-4 text-slate-500 text-[10px] font-bold uppercase tracking-widest border-b border-slate-50 text-left">Mecánico</th>
                 <th className="w-[15%] px-6 py-4 text-slate-500 text-[10px] font-bold uppercase tracking-widest border-b border-slate-50 text-right">Estado / Fecha</th>
-                <th className="w-[10%] px-6 py-4 text-slate-500 text-[10px] font-bold uppercase tracking-widest border-b border-slate-50 text-center">Acciones</th>
+                <th className="w-[15%] px-6 py-4 text-slate-500 text-[10px] font-bold uppercase tracking-widest border-b border-slate-50 text-center">Gestión</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -284,9 +308,7 @@ function WorkOrdersContent() {
                         </p>
                       </td>
                       <td className="px-6 py-4 text-left">
-                        <div className="flex items-center gap-2">
-                          <span className={`text-[11px] font-bold truncate ${isLocked ? 'text-slate-400' : 'text-slate-800'}`}>{order.mechanic.name}</span>
-                        </div>
+                        <span className={`text-[11px] font-bold truncate ${isLocked ? 'text-slate-400' : 'text-slate-800'}`}>{order.mechanic.name}</span>
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex flex-col items-end">
@@ -304,11 +326,19 @@ function WorkOrdersContent() {
                       </td>
                       <td className="px-6 py-4 text-center">
                         <div className="flex justify-center items-center gap-2">
+                          <button 
+                            onClick={() => handleOpenChat(order)}
+                            className="p-1.5 rounded-md text-slate-400 border border-slate-200 hover:bg-slate-50 hover:text-primary transition-all shadow-sm"
+                            title="Auditar Chat"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">forum</span>
+                          </button>
+                          
                           {!isLocked ? (
                             <>
                               <button 
                                 onClick={() => handleOpenEdit(order)}
-                                className="p-1.5 rounded-md text-primary border border-slate-200 hover:bg-blue-50 transition-all shadow-sm active:scale-95"
+                                className="p-1.5 rounded-md text-primary border border-slate-200 hover:bg-blue-50 transition-all shadow-sm"
                                 title="Editar Descripción"
                               >
                                 <span className="material-symbols-outlined text-[18px]">edit</span>
@@ -316,7 +346,7 @@ function WorkOrdersContent() {
                               {isReadyToLiquidate && (
                                 <button 
                                   onClick={() => handleFinalizeOrder(order.id)}
-                                  className="p-1.5 rounded-md text-green-600 border border-green-100 bg-green-50 hover:bg-green-100 transition-all shadow-sm active:scale-95"
+                                  className="p-1.5 rounded-md text-green-600 border border-green-100 bg-green-50 hover:bg-green-100 transition-all shadow-sm"
                                   title="Confirmar Pago y Liquidar"
                                 >
                                   <span className="material-symbols-outlined text-[18px]">payments</span>
@@ -324,7 +354,7 @@ function WorkOrdersContent() {
                               )}
                             </>
                           ) : (
-                            <span className="material-symbols-outlined text-slate-300 cursor-not-allowed mx-auto block" title="Orden Liquidada y Bloqueada">
+                            <span className="material-symbols-outlined text-slate-300 cursor-not-allowed block" title="Orden Liquidada y Bloqueada">
                               lock
                             </span>
                           )}
@@ -444,6 +474,44 @@ function WorkOrdersContent() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Auditoría de Chat (HU-09) */}
+      {showChatModal && selectedOrder && (
+        <div className="fixed inset-0 bg-primary/20 backdrop-blur-sm flex items-center justify-center p-6 z-50">
+          <div className="bg-white rounded-2xl w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+              <div>
+                <h2 className="text-lg font-bold text-primary">Auditoría de Chat</h2>
+                <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Orden: {selectedOrder.vehicle.plate}</p>
+              </div>
+              <button onClick={() => setShowChatModal(false)} className="text-slate-400 hover:text-primary transition-colors">
+                <span className="material-symbols-outlined text-3xl">close</span>
+              </button>
+            </div>
+            
+            <div className="flex-1 p-6 overflow-hidden">
+              {currentUser ? (
+                <OrderChat 
+                  orderId={selectedOrder.id}
+                  currentUserId={currentUser.id}
+                  currentUserRole={currentUser.role}
+                  isLocked={selectedOrder.status === 'FINALIZADO'}
+                />
+              ) : (
+                <div className="h-full flex items-center justify-center text-slate-400 text-sm italic">
+                  Conectando al servidor seguro...
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 bg-slate-50 text-center border-t border-slate-100">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                Modo Supervisión: La participación está restringida para el rol Administrador.
+              </p>
+            </div>
           </div>
         </div>
       )}

@@ -35,6 +35,9 @@ yarn-error.log*
 !.env.example
 
 # vercel
+# Local documentation
+Documentacion.md
+
 .vercel
 
 # typescript

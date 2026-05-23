@@ -25,8 +25,32 @@ async function main() {
     },
   })
 
+  const mechanicUser = await prisma.user.upsert({
+    where: { email: 'mecanico@taller.com' },
+    update: {},
+    create: {
+      email: 'mecanico@taller.com',
+      password: hashedPassword,
+      name: 'Juan Mecánico',
+      role: Role.MECANICO,
+    },
+  })
+
+  const clientUser = await prisma.user.upsert({
+    where: { email: 'cliente@taller.com' },
+    update: {},
+    create: {
+      email: 'cliente@taller.com',
+      password: hashedPassword,
+      name: 'Carlos Cliente',
+      role: Role.CLIENTE,
+    },
+  })
+
   console.log('Base de datos inicializada exitosamente.')
   console.log(`Usuario Admin: ${adminUser.email}`)
+  console.log(`Usuario Mecánico: ${mechanicUser.email}`)
+  console.log(`Usuario Cliente: ${clientUser.email}`)
 }
 
 main()

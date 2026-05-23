@@ -35,6 +35,8 @@ model User {
   password  String
   name      String
   role      Role     @default(CLIENTE)
+  isActive  Boolean  @default(true)
+  lastLogin DateTime?
   createdAt DateTime @default(now())
 
   // Relaciones inversas de la base de datos
@@ -49,6 +51,7 @@ model Vehicle {
   brand     String
   model     String
   year      Int
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   
   // Relación con el Dueño (User con rol CLIENTE)

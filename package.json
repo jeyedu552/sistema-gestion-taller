@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node server.js",
     "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+    "start": "NODE_ENV=production node server.js",
+    "lint": "eslint",
+    "gemini": "gemini"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",
@@ -20,6 +21,7 @@
     "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
+    "@google/gemini-cli": "^0.42.0",
     "@tailwindcss/postcss": "^4",
     "@types/bcrypt": "^6.0.0",
     "@types/node": "^20",

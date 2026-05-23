@@ -107,6 +107,7 @@ export async function GET() {
     return NextResponse.json({
       authenticated: true,
       user: {
+        id: session.id,
         name: session.name,
         email: session.email,
         role: session.role

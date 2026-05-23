@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
+import { OrderChat } from '@/components/chat/order-chat';
+import { io } from 'socket.io-client';
 
 interface Vehicle {
   id: string;
@@ -42,17 +44,45 @@ function ClientDashboard() {
   const [orders, setOrders] = useState<WorkOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<WorkOrder | null>(null);
+  
+  // Notificaciones de Chat
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+  const [currentUser, setCurrentUser] = useState<{id: string, role: string} | null>(null);
 
   useEffect(() => {
     fetchData();
+    fetchSession();
 
-    // Polling silencioso cada 15 segundos para ver actualizaciones en tiempo real
     const interval = setInterval(() => {
       fetchData(true);
     }, 15000);
 
     return () => clearInterval(interval);
   }, []);
+
+  // Escuchar notificaciones en segundo plano
+  useEffect(() => {
+    if (!currentUser || orders.length === 0) return;
+
+    const socket = io();
+    
+    orders.forEach(order => {
+      socket.emit('join_order_chat', order.id);
+    });
+
+    socket.on('receive_message', (data: any) => {
+      if (data.senderId !== currentUser.id && selectedOrder?.id !== data.orderId) {
+        setUnreadCounts(prev => ({
+          ...prev,
+          [data.orderId]: (prev[data.orderId] || 0) + 1
+        }));
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [currentUser, orders.length, selectedOrder?.id]);
 
   const fetchData = async (silent = false) => {
     try {
@@ -73,6 +103,20 @@ function ClientDashboard() {
       console.error(err);
     } finally {
       if (!silent) setIsLoading(false);
+    }
+  };
+
+  const fetchSession = async () => {
+    try {
+      const response = await fetch('/api/autenticacion');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.authenticated) {
+          setCurrentUser({ id: data.user.id, role: data.user.role });
+        }
+      }
+    } catch (error) {
+      console.error(error);
     }
   };
 
@@ -140,7 +184,6 @@ function ClientDashboard() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Columna Izquierda: Mis Vehículos */}
             <div className="lg:col-span-1 space-y-4">
               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                 <span className="material-symbols-outlined text-sm">garage</span>
@@ -168,7 +211,6 @@ function ClientDashboard() {
               </div>
             </div>
 
-            {/* Columna Derecha: Historial de Órdenes */}
             <div className="lg:col-span-2 space-y-4">
               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                 <span className="material-symbols-outlined text-sm">history</span>
@@ -182,33 +224,50 @@ function ClientDashboard() {
                   </div>
                 ) : (
                   <div className="divide-y divide-slate-50">
-                    {orders.map(order => (
-                      <div 
-                        key={order.id} 
-                        onClick={() => setSelectedOrder(order)}
-                        className="p-5 hover:bg-slate-50/80 transition-colors cursor-pointer group flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-                      >
-                        <div className="flex items-start gap-4">
-                          <div className="w-12 h-8 rounded bg-slate-100 border border-slate-200 flex items-center justify-center font-mono font-black text-[11px] text-slate-700 shadow-inner shrink-0 mt-1">
-                            {order.vehicle.plate}
-                          </div>
-                          <div>
-                            <p className="text-sm font-bold text-slate-800 mb-1 leading-tight line-clamp-1">{order.description}</p>
-                            <p className="text-[11px] font-medium text-slate-500 flex items-center gap-1">
-                              <span className="material-symbols-outlined text-[14px]">calendar_today</span>
-                              {new Date(order.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}
-                            </p>
-                          </div>
-                        </div>
+                    {orders.map(order => {
+                      const unread = unreadCounts[order.id] || 0;
+                      return (
+                        <div 
+                          key={order.id} 
+                          onClick={() => {
+                            setSelectedOrder(order);
+                            setUnreadCounts(prev => ({ ...prev, [order.id]: 0 }));
+                          }}
+                          className="p-5 hover:bg-slate-50/80 transition-colors cursor-pointer group flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative"
+                        >
+                          {/* Badge de Notificación */}
+                          {unread > 0 && (
+                            <div className="absolute top-2 left-2">
+                              <div className="bg-red-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow-md border border-white animate-bounce">
+                                {unread}
+                              </div>
+                            </div>
+                          )}
 
-                        <div className="flex items-center gap-4 justify-between sm:justify-end shrink-0 pl-16 sm:pl-0">
-                          <span className={`px-2.5 py-1 rounded text-[9px] font-black uppercase tracking-widest border ${getStatusColor(order.status)}`}>
-                            {order.status === 'EN_PROGRESO' ? 'EN TALLER' : order.status.replace(/_/g, ' ')}
-                          </span>
-                          <span className="material-symbols-outlined text-slate-300 group-hover:text-primary transition-colors">chevron_right</span>
+                          <div className="flex items-start gap-4">
+                            <div className="w-12 h-8 rounded bg-slate-100 border border-slate-200 flex items-center justify-center font-mono font-black text-[11px] text-slate-700 shadow-inner shrink-0 mt-1">
+                              {order.vehicle.plate}
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-slate-800 mb-1 leading-tight line-clamp-1">{order.description}</p>
+                              <p className="text-[11px] font-medium text-slate-500 flex items-center gap-1">
+                                <span className="material-symbols-outlined text-[14px]">calendar_today</span>
+                                {new Date(order.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-4 justify-between sm:justify-end shrink-0 pl-16 sm:pl-0">
+                            <span className={`px-2.5 py-1 rounded text-[9px] font-black uppercase tracking-widest border ${getStatusColor(order.status)}`}>
+                              {order.status === 'EN_PROGRESO' ? 'EN TALLER' : 
+                               order.status === 'LISTO_PARA_LIQUIDAR' ? 'LISTO PARA ENTREGA' :
+                               order.status === 'FINALIZADO' ? 'LIQUIDADO' : order.status.replace(/_/g, ' ')}
+                            </span>
+                            <span className="material-symbols-outlined text-slate-300 group-hover:text-primary transition-colors">chevron_right</span>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -217,17 +276,19 @@ function ClientDashboard() {
         </>
       )}
 
-      {/* Modal Detalle de Orden (Solo Lectura) */}
+      {/* Modal Detalle */}
       {selectedOrder && (
         <div className="fixed inset-0 bg-primary/20 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 z-50">
-          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-in fade-in zoom-in duration-200">
+          <div className="bg-white rounded-2xl w-full max-w-6xl max-h-[95vh] overflow-hidden flex flex-col shadow-2xl animate-in fade-in zoom-in duration-200">
             <div className="p-5 sm:p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
               <div className="flex flex-col">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Detalle de Servicio</span>
                 <div className="flex items-center gap-3">
                   <div className="font-mono font-black text-xl text-primary tracking-tighter">{selectedOrder.vehicle.plate}</div>
                   <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border ${getStatusColor(selectedOrder.status)}`}>
-                    {selectedOrder.status === 'EN_PROGRESO' ? 'EN TALLER' : selectedOrder.status.replace(/_/g, ' ')}
+                    {selectedOrder.status === 'EN_PROGRESO' ? 'EN TALLER' : 
+                     selectedOrder.status === 'LISTO_PARA_LIQUIDAR' ? 'LISTO PARA ENTREGA' :
+                     selectedOrder.status === 'FINALIZADO' ? 'LIQUIDADO' : selectedOrder.status.replace(/_/g, ' ')}
                   </span>
                 </div>
               </div>
@@ -236,70 +297,85 @@ function ClientDashboard() {
               </button>
             </div>
 
-            <div className="flex-1 overflow-auto p-5 sm:p-8 space-y-8">
-              
-              {/* Info Básica */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Mecánico Asignado</h4>
-                  <p className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-[16px] text-primary">engineering</span>
-                    {selectedOrder.mechanic.name}
-                  </p>
-                </div>
-                <div>
-                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Fecha de Ingreso</h4>
-                  <p className="text-sm font-bold text-slate-800">
-                    {new Date(selectedOrder.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}
-                  </p>
-                </div>
-              </div>
-
-              {/* Diagnóstico */}
-              <div>
-                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Motivo de Ingreso / Diagnóstico</h4>
-                <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 text-sm text-slate-700 leading-relaxed font-medium">
-                  {selectedOrder.description}
-                </div>
-              </div>
-
-              {/* Repuestos (Solo lectura) */}
-              <div>
-                <div className="flex justify-between items-end mb-3">
-                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Trabajos y Repuestos Aplicados</h4>
-                  <span className="text-xs font-bold text-primary bg-blue-50 px-2 py-0.5 rounded-md">{selectedOrder.items.length} ítems</span>
-                </div>
-                
-                {selectedOrder.items.length === 0 ? (
-                  <div className="text-center py-8 text-slate-400 text-xs bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                    Aún no se han registrado insumos o trabajos en esta orden.
+            <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-12">
+              <div className="lg:col-span-7 overflow-y-auto p-5 sm:p-8 space-y-8 border-r border-slate-100">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Mecánico Asignado</h4>
+                    <p className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-[16px] text-primary">engineering</span>
+                      {selectedOrder.mechanic.name}
+                    </p>
                   </div>
-                ) : (
-                  <div className="border border-slate-100 rounded-xl overflow-hidden">
-                    <table className="w-full text-left">
-                      <thead className="bg-slate-50 text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                        <tr>
-                          <th className="px-4 py-3 border-b border-slate-100">Descripción del Trabajo/Repuesto</th>
-                          <th className="px-4 py-3 border-b border-slate-100 text-right">Costo</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-50 text-xs font-semibold text-slate-700">
-                        {selectedOrder.items.map((item, idx) => (
-                          <tr key={idx} className="hover:bg-slate-50/50">
-                            <td className="px-4 py-3">{item.description}</td>
-                            <td className="px-4 py-3 text-right text-primary font-bold">${item.price.toFixed(2)}</td>
+                  <div>
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Fecha de Ingreso</h4>
+                    <p className="text-sm font-bold text-slate-800">
+                      {new Date(selectedOrder.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Diagnóstico Inicial</h4>
+                  <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 text-sm text-slate-700 leading-relaxed font-medium">
+                    {selectedOrder.description}
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Trabajos y Repuestos Aplicados</h4>
+                  {selectedOrder.items.length === 0 ? (
+                    <div className="text-center py-8 text-slate-400 text-xs bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                      Aún no hay insumos registrados.
+                    </div>
+                  ) : (
+                    <div className="border border-slate-100 rounded-xl overflow-hidden">
+                      <table className="w-full text-left">
+                        <thead className="bg-slate-50 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                          <tr>
+                            <th className="px-4 py-3 border-b border-slate-100">Descripción</th>
+                            <th className="px-4 py-3 border-b border-slate-100 text-right">Costo</th>
                           </tr>
-                        ))}
-                        <tr className="bg-slate-50/50 font-black text-slate-900 border-t-2 border-slate-100">
-                          <td className="px-4 py-3 text-right uppercase text-[10px] tracking-widest">Subtotal Acumulado</td>
-                          <td className="px-4 py-3 text-right text-sm">${selectedOrder.items.reduce((acc, curr) => acc + curr.price, 0).toFixed(2)}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+                        </thead>
+                        <tbody className="divide-y divide-slate-50 text-xs font-semibold text-slate-700">
+                          {selectedOrder.items.map((item, idx) => (
+                            <tr key={idx} className="hover:bg-slate-50/50">
+                              <td className="px-4 py-3">{item.description}</td>
+                              <td className="px-4 py-3 text-right text-primary font-bold">${item.price.toFixed(2)}</td>
+                            </tr>
+                          ))}
+                          <tr className="bg-slate-50/50 font-black text-slate-900 border-t-2 border-slate-100">
+                            <td className="px-4 py-3 text-right uppercase text-[10px] tracking-widest">Total Acumulado</td>
+                            <td className="px-4 py-3 text-right text-sm">${selectedOrder.items.reduce((acc, curr) => acc + curr.price, 0).toFixed(2)}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
               </div>
 
+              <div className="lg:col-span-5 bg-slate-50/30 flex flex-col h-full">
+                <div className="p-6 flex-1 flex flex-col">
+                  <div className="mb-4 flex items-center justify-between">
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Chat con Mecánico</h3>
+                    <span className="material-symbols-outlined text-primary text-xl">forum</span>
+                  </div>
+                  
+                  {currentUser ? (
+                    <OrderChat 
+                      orderId={selectedOrder.id}
+                      currentUserId={currentUser.id}
+                      currentUserRole={currentUser.role}
+                      isLocked={selectedOrder.status === 'FINALIZADO'}
+                    />
+                  ) : (
+                    <div className="flex-1 flex items-center justify-center text-slate-400 text-xs font-medium italic">
+                      Iniciando canal seguro...
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>

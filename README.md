@@ -8,45 +8,57 @@ Permite centralizar el control de clientes, vehículos y órdenes de trabajo, in
 
 ## 1. Arquitectura del Sistema
 
-El sistema se basa en una arquitectura de **Monolito Moderno** utilizando **Next.js**, **Prisma ORM** y **Socket.io**.
+El sistema se basa en una arquitectura de **Monolito Moderno** utilizando **Next.js**, **Prisma ORM** y **Socket.io**. 
 
-Toda la lógica de presentación, negocio y persistencia conviven en el mismo entorno de ejecución.
-
----
-
-## Diagrama de Bloques Estructurado
-![Arquitectura Monolítica](./public/EstructuraProyectoIBIM.png).
+Se utiliza un **Custom Server** (`server.js`) para integrar WebSockets directamente sobre el motor de Node.js, permitiendo comunicación bidireccional de baja latencia sin servicios externos.
 
 ---
 
-## Anatomía del Diagrama y Componentes
+## 2. Tecnologías Clave
 
-### Capa del Cliente
-
-**Navegador Web**
-
-Interfaces construidas en **React**, tales como:
-
-- Formularios de ingreso.
-- Dashboard CRUD.
-- Chat general.
-
-El cliente mantiene peticiones HTTP tradicionales para la gestión de datos y una conexión abierta de WebSocket únicamente en la pantalla de chat.
+*   **Next.js (App Router):** Framework principal de React para el frontend y backend (API).
+*   **Prisma ORM:** Capa de abstracción y gestión de base de datos PostgreSQL.
+*   **Socket.io:** Motor de WebSockets para el chat interactivo en tiempo real (HU-07).
+*   **PostgreSQL:** Base de datos relacional para persistencia de datos.
+*   **Bcrypt:** Algoritmo de hashing para la seguridad de contraseñas.
+*   **Tailwind CSS:** Framework de diseño para una interfaz minimalista y empresarial.
 
 ---
 
-### Servidor Monolítico
+## 3. Instalación y Configuración
 
-**Next.js + Node.js**
+Siga estos pasos para levantar el proyecto localmente:
 
-Reúne todos los componentes en una sola unidad de despliegue.
+### Prerrequisitos
+- Node.js (v18 o superior)
+- pnpm instalado (`npm install -g pnpm`)
+- Instancia de PostgreSQL activa.
 
-Sus responsabilidades principales son:
-
-- Manejar **Server-Side Rendering (SSR)** para pre-renderizar vistas con datos directamente desde el servidor.
-- Exponer **API Routes** que actúan como controladores de negocio.
-- Proteger procesos críticos como la encriptación de contraseñas mediante **bcrypt**.
-- Levantar el servidor de **Socket.io** sobre el mismo entorno para coordinar eventos en tiempo real.
+### Pasos
+1.  **Clonar el repositorio:**
+    ```bash
+    git clone https://github.com/jeyedu552/sistema-gestion-taller.git
+    cd sistema-gestion-taller
+    ```
+2.  **Instalar dependencias:**
+    ```bash
+    pnpm install
+    ```
+3.  **Configurar variables de entorno:**
+    Cree un archivo `.env` en la raíz basado en `.env.example` y configure su `DATABASE_URL`.
+4.  **Sincronizar base de datos:**
+    ```bash
+    pnpm prisma migrate dev
+    pnpm prisma generate
+    ```
+5.  **Poblar datos iniciales (Seed):**
+    ```bash
+    pnpm prisma db seed
+    ```
+6.  **Iniciar servidor de desarrollo (con WebSockets):**
+    ```bash
+    pnpm dev
+    ```
 
 ---
 

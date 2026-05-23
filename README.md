@@ -10,7 +10,31 @@ Permite centralizar el control de clientes, vehículos y órdenes de trabajo, in
 
 El sistema se basa en una arquitectura de **Monolito Moderno** utilizando **Next.js**, **Prisma ORM** y **Socket.io**. 
 
-Se utiliza un **Custom Server** (`server.js`) para integrar WebSockets directamente sobre el motor de Node.js, permitiendo comunicación bidireccional de baja latencia sin servicios externos.
+---
+
+## Diagrama de Bloques Estructurado
+![Arquitectura Monolítica](public/EstructuraProyectoIBIM.png)
+
+---
+
+## Anatomía del Diagrama y Componentes
+
+Para facilitar la comprensión del sistema, a continuación se detalla cómo se relacionan las capas lógicas de la imagen con la estructura física del código fuente:
+
+### 1. Capa del Cliente (Frontend)
+Responsable de la experiencia de usuario y la visualización de datos.
+- **Ubicación en código:** `src/components/`, `src/app/**/page.tsx`
+- **Tecnologías:** React, Tailwind CSS, **socket.io-client**.
+
+### 2. Capa de Negocio (Servidor Monolítico)
+El "cerebro" del sistema. Gestiona la seguridad, las reglas del taller y la comunicación en vivo.
+- **Ubicación en código:** `src/services/`, `src/app/api/`, `src/middleware.ts`, **`server.js`**
+- **Tecnologías:** Next.js API Routes, **Socket.io** (Servidor), Bcrypt.
+
+### 3. Capa de Datos (Persistencia)
+Encargada del almacenamiento y la integridad de la información.
+- **Ubicación en código:** `prisma/`, `src/lib/prisma.ts`
+- **Tecnologías:** PostgreSQL, Prisma ORM.
 
 ---
 
@@ -18,14 +42,32 @@ Se utiliza un **Custom Server** (`server.js`) para integrar WebSockets directame
 
 *   **Next.js (App Router):** Framework principal de React para el frontend y backend (API).
 *   **Prisma ORM:** Capa de abstracción y gestión de base de datos PostgreSQL.
-*   **Socket.io:** Motor de WebSockets para el chat interactivo en tiempo real (HU-07).
+*   **Socket.io & Socket.io-client:** Motor de WebSockets (servidor y cliente) para el chat interactivo en tiempo real (HU-07).
 *   **PostgreSQL:** Base de datos relacional para persistencia de datos.
 *   **Bcrypt:** Algoritmo de hashing para la seguridad de contraseñas.
 *   **Tailwind CSS:** Framework de diseño para una interfaz minimalista y empresarial.
 
 ---
 
-## 3. Instalación y Configuración
+## 3. Stack Tecnológico y Herramientas
+
+| Categoría | Tecnología | Descripción |
+|---|---|---|
+| Framework Principal | **Next.js** | Framework principal del proyecto usando App Router. |
+| Librería de Interfaz | **React** | Librería para construir interfaces de usuario dinámicas. |
+| Lenguaje | **TypeScript** | Permite tipado estricto y ayuda a prevenir errores durante el desarrollo. |
+| Base de Datos | **PostgreSQL** | Base de datos relacional para almacenar la información del sistema. |
+| ORM | **Prisma 7** | Permite realizar consultas seguras a la base de datos. |
+| Driver Adapter | **@prisma/adapter-pg** | Adaptador oficial para conectar Prisma con PostgreSQL. |
+| Tiempo Real (Servidor) | **Socket.io** | Motor WebSocket para comunicación bidireccional (HU-07). |
+| Tiempo Real (Cliente) | **socket.io-client** | Librería para conectar el navegador con el chat en vivo. |
+| Estilos | **Tailwind CSS** | Framework de utilidades CSS para diseñar interfaces de forma rápida. |
+| Seguridad | **Bcrypt** | Encriptación de contraseñas de un solo sentido. |
+| Gestor de Paquetes | **pnpm** | Permite instalaciones rápidas y seguras. |
+
+---
+
+## 4. Instalación y Configuración
 
 Siga estos pasos para levantar el proyecto localmente:
 
@@ -40,7 +82,7 @@ Siga estos pasos para levantar el proyecto localmente:
     git clone https://github.com/jeyedu552/sistema-gestion-taller.git
     cd sistema-gestion-taller
     ```
-2.  **Instalar dependencias:**
+2.  **Instalar dependencias (Incluye Socket.io):**
     ```bash
     pnpm install
     ```
@@ -55,346 +97,41 @@ Siga estos pasos para levantar el proyecto localmente:
     ```bash
     pnpm prisma db seed
     ```
-6.  **Iniciar servidor de desarrollo (con WebSockets):**
+6.  **Iniciar servidor de desarrollo (Soporta WebSockets):**
     ```bash
     pnpm dev
     ```
 
 ---
+## 5. Definición de Roles y Seguridad
 
-### Capa de Persistencia
+El sistema implementa un control de accesos basado en tres roles estrictos para garantizar la integridad operativa:
 
-**Base de Datos Relacional**
-
-Base de datos robusta encargada de organizar la información en tablas conectadas, tales como:
-
-- `Users`
-- `Vehicles`
-- `WorkOrders`
-- `ChatMessages`
-
-**Prisma ORM** funciona como el puente exclusivo de comunicación entre la aplicación y la base de datos, garantizando:
-
-- Tipado seguro.
-- Consultas estructuradas.
-- Protección frente a inyecciones SQL.
-
----
-## 2. Stack Tecnológico y Herramientas
-
-Para cumplir con los requerimientos técnicos y mantener un alto estándar de rendimiento, el proyecto utiliza las siguientes tecnologías:
-
-| Categoría | Tecnología | Descripción |
-|---|---|---|
-| Framework Principal | **Next.js** | Framework principal del proyecto usando App Router. |
-| Librería de Interfaz | **React** | Librería para construir interfaces de usuario dinámicas. |
-| Lenguaje | **TypeScript** | Permite tipado estricto y ayuda a prevenir errores durante el desarrollo. |
-| Base de Datos | **PostgreSQL / MySQL** | Base de datos relacional para almacenar la información del sistema. |
-| ORM | **Prisma 7** | Permite realizar consultas seguras a la base de datos (Requiere Driver Adapter). |
-| Driver Adapter | **@prisma/adapter-pg** | Adaptador oficial para conectar Prisma con PostgreSQL. |
-| Tiempo Real | **Socket.io** | Comunicación bidireccional mediante WebSockets. |
-| Estilos | **Tailwind CSS** | Framework de utilidades CSS para diseñar interfaces de forma rápida. |
-| Seguridad | **Bcrypt** | Encriptación de contraseñas de un solo sentido. |
-| Gestor de Paquetes | **pnpm** | Permite instalaciones rápidas, seguras y evita dependencias fantasma. |
-
----
-## 3. Definición de Roles y Seguridad
-
-Para mitigar riesgos de escalada de privilegios y mantener un alcance realista y eficiente, el sistema implementa un control de accesos basado en dos roles estrictos.
+- **Administrador:** Acceso total (Usuarios, Vehículos, Órdenes y Liquidación).
+- **Mecánico:** Terminal técnica (Gestión de órdenes asignadas, repuestos y chat).
+- **Cliente:** Portal de seguimiento (Consulta de estado, historial y chat).
 
 ---
 
-### Administrador / Taller
-
-**Mecánico o Jefe de Taller**
-
-Tiene acceso completo a las operaciones CRUD sobre:
-
-- Clientes.
-- Vehículos.
-- Órdenes de trabajo.
-
-Además, dispone de un formulario privado interno para dar de alta a nuevos trabajadores del taller.
-
----
-
-### Cliente
-
-**Dueño del vehículo**
-
-Tiene permisos exclusivos de lectura sobre:
-
-- Sus datos personales.
-- Sus vehículos.
-- El estado de sus órdenes de trabajo.
-
-También cuenta con acceso bidireccional al chat en tiempo real para consultar avances de su orden de trabajo.
-
----
-
-## Flujo Seguro de Enrolamiento
-
-### Registro Público
-
-**SignUp**
-
-Diseñado exclusivamente para clientes externos.
-
-El backend ignora cualquier parámetro de rol enviado por el frontend y fuerza el registro con el rol:
-
-```txt
-CLIENTE
-```
-
-Esto evita que un usuario malintencionado pueda modificar el rol desde el navegador o mediante una petición alterada.
-
----
-
-### Registro de Personal
-
-No existe un formulario público para mecánicos.
-
-El administrador maestro debe registrar al personal desde una sección interna de la aplicación.
-
-Durante este proceso, puede asignar:
-
-- Una contraseña temporal.
-- El rol de gestión correspondiente.
-
----
-
-## 3. Flujo de Trabajo y Estándares de Git
+## 6. Flujo de Trabajo y Estándares de Git
 
 Para coordinar los aportes de todo el equipo y asegurar un repositorio limpio, se adopta el modelo **Git Flow simplificado** combinado con la convención **Conventional Commits**.
 
----
+### Formato de Commits (Estándar Profesional)
+Cada confirmación de código debe iniciar con un prefijo en minúsculas seguido de dos puntos y la referencia a la Historia de Usuario correspondiente en el `scope`.
 
-## Estructura de Ramas
-
-### `main`
-
-Rama de producción.
-
-Contiene únicamente código completamente estable y listo para despliegue.
+- **`feat(HU-XX):`** Nueva funcionalidad (ej: `feat(HU-07): integracion de socket io`).
+- **`fix(HU-XX):`** Corrección de un fallo (ej: `fix(HU-01): error en login`).
+- **`docs:`** Cambios exclusivos en la documentación.
+- **`chore:`** Tareas de mantenimiento o instalación de dependencias.
 
 ---
 
-### `develop`
+## 7. Acceso al Sistema
 
-Rama de integración.
+Una vez levantado el servidor, puede acceder a la plataforma a través de los siguientes enlaces:
 
-Funciona como el eje central de consolidación del proyecto.
+- **Portal de Acceso:** [http://localhost:3000/autenticacion/inicio-sesion](http://localhost:3000/autenticacion/inicio-sesion)
+- **Registro Público:** [http://localhost:3000/autenticacion/registro](http://localhost:3000/autenticacion/registro)
 
-Aquí se mezclan las ramas de funcionalidades previamente validadas.
-
----
-
-### `feature/nombre-tarea`
-
-Ramas de desarrollo temporal extraídas desde `develop`.
-
-Se utilizan para programar una tarea específica.
-
-Ejemplo:
-
-```txt
-feature/inicio-sesion-autenticacion
-```
-
----
-
-### `fix/descripcion-error`
-
-Ramas urgentes creadas para solucionar fallas detectadas en la rama de integración.
-
-Ejemplo:
-
-```txt
-fix/error-validacion-inicio-sesion
-```
-
----
-
-## Formato de Commits
-
-**Estándar Profesional**
-
-Cada confirmación de código debe iniciar con un prefijo en minúsculas seguido de dos puntos.
-
----
-
-### `feat`
-
-Se usa para una nueva funcionalidad.
-
-Ejemplo:
-
-```txt
-feat: integracion de socket io en servidor
-```
-
----
-
-### `fix`
-
-Se usa para la corrección de un fallo.
-
-Ejemplo:
-
-```txt
-fix: validacion de correo vacio en signup
-```
-
----
-
-### `docs`
-
-Se usa para cambios estrictos en la documentación.
-
-Ejemplo:
-
-```txt
-docs: actualizacion de variables en readme
-```
-
----
-
-### `chore`
-
-Se usa para tareas de mantenimiento, configuración o herramientas.
-
-Ejemplo:
-
-```txt
-chore: instalacion de dependencia bcrypt
-```
-
----
-
-### `refactor`
-
-Se usa para modificaciones de código que no alteran el comportamiento externo del sistema.
-
-Ejemplo:
-
-```txt
-refactor: reorganizacion de servicios de ordenes de trabajo
-```
-
-## Vinculación con Historias de Usuario
-
-Cada confirmación de código debe iniciar con un prefijo en minúsculas e incluir de forma obligatoria la referencia a la Historia de Usuario correspondiente en el `scope`.
-
-## Ejemplos de commits
-
-```bash
-feat(HU-01): implementacion de encriptacion bcrypt en registro de usuarios
-```
-
-```bash
-feat(HU-05): adicion de formulario dinámico de repuestos en el panel del mecanico
-```
-
-```bash
-fix(HU-03): correccion en la expresion regular de validacion de placas
-```
-
-```bash
-chore(deps): instalacion de dependencias de desarrollo para prisma ORM
-```
-
-```bash
-docs(readme): actualizacion de la estructura de carpetas y guias locales
-```
-
----
-
-## 4. Estructura del Proyecto e Inyección de Capas
-
-El proyecto sigue una arquitectura lógica por capas distribuida en la carpeta `src`. Al generar o modificar código, se deben respetar estrictamente estas responsabilidades:
-
-```plaintext
-/
-├── prisma/                 # Configuración de Prisma ORM
-│   └── schema.prisma       # Modelos y entidades de la Base de Datos Relacional
-├── public/                 # Recursos y activos estáticos (imágenes, iconos, logos)
-├── src/
-│   ├── app/                # Capa de Enrutamiento y Controladores
-│   │                       # Páginas, Endpoints (API Routes) y Server Actions.
-│   ├── components/         # Capa de Presentación (UI)
-│   │                       # Componentes visuales, botones y formularios (React + Tailwind).
-│   ├── services/           # Capa de Lógica de Negocio
-│   │                       # Cálculos de órdenes, validaciones pesadas y reglas del taller automotriz.
-│   ├── lib/                # Capa de Acceso a Datos e Infraestructura
-│   │                       # Instancia única de Prisma DB y clientes externos.
-│   ├── types/              # Capa de Definiciones
-│   │                       # Interfaces, tipos y esquemas globales de TypeScript.
-│   └── middleware.ts       # Capa de Seguridad Global
-│                           # Control de acceso, protección de rutas y validación de sesiones.
-├── .env.example            # Plantilla pública de referencia para variables de entorno locales
-├── .gitignore              # Archivos y credenciales estrictamente excluidos del repositorio
-├── package.json            # Gestión de dependencias y scripts
-└── pnpm-lock.yaml          # Historial de versiones gestionado por pnpm
-```
-
----
-
-# 6. Instrucciones de Levantamiento Local
-
-Siga estos pasos en orden cronológico para inicializar el entorno de desarrollo en su computadora.
-
-## 1. Clonar el repositorio y situarse en desarrollo
-
-```bash
-git clone <url-del-repositorio>
-cd taller-automotriz
-git checkout develop
-```
-
-## 2. Instalar dependencias con `pnpm`
-
-```bash
-pnpm install
-```
-
-## 3. Configurar el entorno local
-
-Duplica el archivo de plantilla y configúralo con tus credenciales locales de base de datos:
-
-```bash
-cp .env.example .env
-```
-
-Abra el archivo `.env` resultante y modifique la propiedad `DATABASE_URL` con el usuario y contraseña de su PostgreSQL local.
-
-## 4. Ejecutar migraciones de la base de datos
-
-Este comando creará sus tablas locales en PostgreSQL y aplicará las relaciones jerárquicas:
-
-```bash
-pnpm dlx prisma migrate dev --name inicializacion_sistema
-```
-
-## 5. Ejecutar la semilla (Seed) de datos
-
-Para inyectar al Administrador Maestro en su sistema, ejecute el siguiente comando:
-
-```bash
-pnpm dlx prisma db seed
-```
-
-## 6. Iniciar el servidor de desarrollo
-
-```bash
-pnpm dev
-```
-
-## 7. Abrir el proyecto e iniciar sesión
-
-Abra la siguiente dirección en su navegador web:
-
-```bash
-http://localhost:3000
-```
-
-Para acceder al panel de administración completo, utilice las credenciales inyectadas por la semilla. semilla.
+*Nota: Para acceder a los paneles privados, utilice las credenciales generadas por el proceso de `seed` inicial.*

@@ -25,7 +25,7 @@ interface WorkOrder {
 }
 
 /**
- * Componente principal con Suspense para manejar searchParams
+ * Componente principal con Suspense para manejar searchParams (HU-04)
  */
 export default function WorkOrdersPage() {
   return (
@@ -141,22 +141,25 @@ function WorkOrdersContent() {
   };
 
   const handleFinalizeOrder = async (orderId: string) => {
-    if (!confirm('¿Deseas cerrar y finalizar esta orden definitivamente? No podrá ser editada después.')) return;
+    if (!confirm('¿Deseas confirmar el pago y liquidar esta orden? El registro se cerrará definitivamente.')) return;
     
     try {
-      // Mock de HU-08: Actualizar estado a FINALIZADO
-      // Reutilizamos el endpoint de mecánico o creamos uno de admin luego, por ahora lo hacemos directo
-      const response = await fetch(`/api/mecanico/ordenes/${orderId}/estado`, {
+      const response = await fetch(`/api/administrador/ordenes/${orderId}/liquidar`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'FINALIZADO' })
+        headers: { 'Content-Type': 'application/json' }
       });
       
       if (response.ok) {
-        fetchData(true);
+        const updated = await response.json();
+        // Actualizar el estado localmente para reflejar el cambio al instante
+        setOrders(orders.map(o => o.id === orderId ? { ...o, status: updated.status } : o));
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || 'Error al liquidar la orden');
       }
     } catch (err) {
       console.error(err);
+      alert('Error de conexión al servidor');
     }
   };
 
@@ -222,7 +225,7 @@ function WorkOrdersContent() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <KpiCard label="PENDIENTES" value={stats.pending} icon="pending_actions" color="slate" />
         <KpiCard label="EN TALLER" value={stats.inProgress} icon="engineering" color="primary" />
-        <KpiCard label="FINALIZADAS" value={stats.completed} icon="task_alt" color="primary" />
+        <KpiCard label="LIQUIDADAS" value={stats.completed} icon="task_alt" color="primary" />
       </div>
 
       {/* Toolbar */}
@@ -288,7 +291,9 @@ function WorkOrdersContent() {
                       <td className="px-6 py-4 text-right">
                         <div className="flex flex-col items-end">
                           <span className={`text-[10px] font-black tracking-tight ${getStatusStyle(order.status)}`}>
-                            {order.status === 'EN_PROGRESO' ? 'EN TALLER' : order.status.replace(/_/g, ' ')}
+                            {order.status === 'EN_PROGRESO' ? 'EN TALLER' : 
+                             order.status === 'LISTO_PARA_LIQUIDAR' ? 'LISTO PARA ENTREGA' :
+                             order.status === 'FINALIZADO' ? 'LIQUIDADO' : order.status.replace(/_/g, ' ')}
                           </span>
                           {isClient && (
                             <span className="text-[9px] font-bold text-slate-400 mt-1 uppercase">
@@ -312,14 +317,14 @@ function WorkOrdersContent() {
                                 <button 
                                   onClick={() => handleFinalizeOrder(order.id)}
                                   className="p-1.5 rounded-md text-green-600 border border-green-100 bg-green-50 hover:bg-green-100 transition-all shadow-sm active:scale-95"
-                                  title="Liquidar y Cerrar Orden"
+                                  title="Confirmar Pago y Liquidar"
                                 >
-                                  <span className="material-symbols-outlined text-[18px]">fact_check</span>
+                                  <span className="material-symbols-outlined text-[18px]">payments</span>
                                 </button>
                               )}
                             </>
                           ) : (
-                            <span className="material-symbols-outlined text-slate-300 cursor-not-allowed" title="Orden Finalizada y Bloqueada">
+                            <span className="material-symbols-outlined text-slate-300 cursor-not-allowed mx-auto block" title="Orden Liquidada y Bloqueada">
                               lock
                             </span>
                           )}

@@ -201,14 +201,15 @@ function MechanicDashboard() {
               className="bg-white border border-slate-100 rounded-xl p-6 shadow-sm hover:shadow-md transition-all cursor-pointer group border-l-4 border-l-primary relative overflow-hidden"
             >
               <div className="flex justify-between items-start mb-4">
-                <div className="font-mono font-black text-primary text-lg tracking-tighter">
-                  {order.vehicle.plate}
-                </div>
-                <span className={`px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest border ${getStatusColor(order.status)}`}>
-                  {order.status === 'EN_PROGRESO' ? 'EN TALLER' : order.status.replace(/_/g, ' ')}
-                </span>
+              <div className="font-mono font-black text-primary text-lg tracking-tighter">
+                {order.vehicle.plate}
               </div>
-              
+              <span className={`px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest border ${getStatusColor(order.status)}`}>
+                {order.status === 'EN_PROGRESO' ? 'EN TALLER' : 
+                 order.status === 'LISTO_PARA_LIQUIDAR' ? 'LISTO PARA ENTREGA' :
+                 order.status === 'FINALIZADO' ? 'LIQUIDADO' : order.status}
+              </span>
+              </div>              
               <div className="space-y-3">
                 <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Vehículo</p>

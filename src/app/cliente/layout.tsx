@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link'
 
 /**
  * Layout para el portal de clientes.
@@ -66,15 +67,15 @@ export default function ClientLayout({
           </div>
 
           {/* Perfil del Cliente */}
-          <div className="flex items-center gap-3 pr-2">
-            <div className="text-right hidden sm:block">
-              <p className="text-[12px] font-bold text-white leading-tight">{userName || 'Cliente'}</p>
-              <p className="text-[10px] font-bold text-on-primary-container uppercase tracking-tight">Propietario</p>
-            </div>
-            <div className="w-8 h-8 rounded bg-primary flex items-center justify-center text-white text-[10px] font-black shadow-sm uppercase border border-white/10">
-              {(userName || 'CL').substring(0, 2)}
-            </div>
-          </div>
+          <Link href="/cliente/perfil" className="flex items-center gap-2.5 cursor-pointer hover:bg-slate-50 transition-colors p-1 rounded-md">
+              <div className="text-right hidden lg:block">
+                <p className="text-[12px] font-bold text-slate-800 leading-tight hover:text-primary transition-colors">{userName || 'Cliente'}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Cliente</p>
+              </div>
+              <div className="w-7 h-7 rounded bg-primary flex items-center justify-center text-white text-[10px] font-black shadow-sm uppercase hover:bg-primary/90 transition-colors">
+                {(userName || 'CL').substring(0, 2)}
+              </div>
+            </Link>
 
           <button 
             onClick={handleLogout}

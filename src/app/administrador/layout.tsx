@@ -156,15 +156,15 @@ export default function AdminLayout({
               <span className="material-symbols-outlined text-[20px]">notifications</span>
             </button>
             <div className="h-6 w-[1px] bg-slate-100"></div>
-            <div className="flex items-center gap-2.5 cursor-pointer hover:bg-slate-50 transition-colors p-1 rounded-md">
-              <div className="text-right hidden lg:block">
-                <p className="text-[12px] font-bold text-slate-800 leading-tight">{userName || 'Administrador'}</p>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Administrador</p>
-              </div>
-              <div className="w-7 h-7 rounded bg-primary flex items-center justify-center text-white text-[10px] font-black shadow-sm uppercase">
-                {(userName || 'AD').substring(0, 2)}
-              </div>
+            <Link href="/administrador/perfil" className="flex items-center gap-2.5 cursor-pointer hover:bg-slate-50 transition-colors p-1 rounded-md">
+            <div className="text-right hidden lg:block">
+              <p className="text-[12px] font-bold text-slate-800 leading-tight hover:text-primary transition-colors">{userName || 'Administrador'}</p>
+               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Administrador</p>
             </div>
+            <div className="w-7 h-7 rounded bg-primary flex items-center justify-center text-white text-[10px] font-black shadow-sm uppercase hover:bg-primary/90 transition-colors">
+             {(userName || 'AD').substring(0, 2)}
+            </div>
+              </Link>
           </div>
         </header>
 

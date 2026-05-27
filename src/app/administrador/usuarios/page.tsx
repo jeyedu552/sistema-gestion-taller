@@ -48,7 +48,10 @@ export default function UsersDirectoryPage() {
 function UsersContent() {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+
+  const [isClient, setIsClient] = useState(false);
+  useEffect(() => { setIsClient(true); }, []);
+
   // Obtener término de búsqueda de la URL
   const searchParams = useSearchParams();
   const urlQuery = searchParams.get('q') || '';
@@ -65,7 +68,7 @@ function UsersContent() {
     name: '',
     email: '',
     password: '',
-    role: 'CLIENTE' as const
+    role: 'CLIENTE' as 'CLIENTE' | 'MECANICO'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -289,7 +292,7 @@ function UsersContent() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-[12px] text-slate-500 font-medium">
-                      {formatLastLogin(user.lastLogin)}
+                      {isClient ? formatLastLogin(user.lastLogin) : 'Calculando...'}
                     </td>
                     <td className="px-6 py-4 text-right">
                       {user.role !== 'ADMIN' ? (

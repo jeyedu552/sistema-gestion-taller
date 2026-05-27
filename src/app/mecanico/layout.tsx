@@ -156,15 +156,15 @@ export default function MechanicLayout({
               <span className="material-symbols-outlined text-[20px]">notifications</span>
             </button>
             <div className="h-6 w-[1px] bg-slate-100"></div>
-            <div className="flex items-center gap-2.5 p-1">
+            <Link href="/mecanico/perfil" className="flex items-center gap-2.5 cursor-pointer hover:bg-slate-50 transition-colors p-1 rounded-md">
               <div className="text-right hidden lg:block">
-                <p className="text-[12px] font-bold text-slate-800 leading-tight">{userName || 'Mecánico'}</p>
+                <p className="text-[12px] font-bold text-slate-800 leading-tight hover:text-primary transition-colors">{userName || 'Mecánico'}</p>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Mecánico</p>
               </div>
-              <div className="w-7 h-7 rounded bg-primary flex items-center justify-center text-white text-[10px] font-black shadow-sm uppercase">
+              <div className="w-7 h-7 rounded bg-primary flex items-center justify-center text-white text-[10px] font-black shadow-sm uppercase hover:bg-primary/90 transition-colors">
                 {(userName || 'ME').substring(0, 2)}
               </div>
-            </div>
+            </Link>
           </div>
         </header>
 

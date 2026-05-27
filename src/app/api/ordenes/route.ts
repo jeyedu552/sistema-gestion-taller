@@ -104,22 +104,34 @@ export async function POST(request: Request) {
     }
 
     // 4. Crear la orden (El estado PENDIENTE y las fechas se asignan por default)
-    const newOrder = await prisma.workOrder.create({
-      data: {
-        description,
-        vehicleId,
-        mechanicId,
-        status: 'PENDIENTE',
+   // 1. Primero creamos la orden y CERRAMOS la función
+   const newOrder = await prisma.workOrder.create({
+    data: {
+      description,
+      vehicleId,
+      mechanicId,
+      status: 'PENDIENTE',
+    },
+    include: {
+      vehicle: {
+        select: { plate: true }
       },
-      include: {
-        vehicle: {
-          select: { plate: true }
-        },
-        mechanic: {
-          select: { name: true }
-        }
+      mechanic: {
+        select: { name: true }
       }
-    });
+    }
+  }); // <-- AQUÍ CERRAMOS LA CREACIÓN DE LA ORDEN
+
+  // 2. AHORA SÍ, inyectamos la notificación como una acción independiente
+  await prisma.notification.create({
+    data: {
+      title: 'Nueva Orden Asignada',
+      message: 'Se te ha asignado una nueva reparación. Revisa tu panel para más detalles.',
+      userId: mechanicId 
+    }
+  });
+
+    
 
     return NextResponse.json(newOrder, { status: 201 });
   } catch (error) {

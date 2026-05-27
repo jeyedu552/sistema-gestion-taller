@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import NotificationBell from '@/components/NotificationBell';
 
 /**
  * Layout Principal para el Panel de Administración.
@@ -152,9 +153,7 @@ export default function AdminLayout({
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="p-2 rounded-full hover:bg-slate-50 transition-colors text-slate-400">
-              <span className="material-symbols-outlined text-[20px]">notifications</span>
-            </button>
+          <NotificationBell />
             <div className="h-6 w-[1px] bg-slate-100"></div>
             <Link href="/administrador/perfil" className="flex items-center gap-2.5 cursor-pointer hover:bg-slate-50 transition-colors p-1 rounded-md">
             <div className="text-right hidden lg:block">

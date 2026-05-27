@@ -68,11 +68,25 @@ export async function PATCH(
       return NextResponse.json({ error: 'Estado no válido o no permitido para este rol' }, { status: 400 });
     }
 
-    // Actualizar estado
-    const updatedOrder = await prisma.workOrder.update({
-      where: { id },
-      data: { status }
+  // Actualizar estado
+  const updatedOrder = await prisma.workOrder.update({
+    where: { id },
+    data: { status },
+    include: {
+      vehicle: true // <-- Traemos el vehículo para saber quién es el dueño
+    }
+  });
+
+  // 2. INYECTAMOS LA NOTIFICACIÓN PARA EL CLIENTE
+  if (status === 'LISTO_PARA_LIQUIDAR') {
+    await prisma.notification.create({
+      data: {
+        title: '¡Tu vehículo está listo!',
+        message: `El mantenimiento de tu vehículo (Placa: ${updatedOrder.vehicle.plate}) ha finalizado. Ya puedes acercarte al taller.`,
+        userId: updatedOrder.vehicle.ownerId // <-- Corregido a ownerId
+      }
     });
+  }
 
     return NextResponse.json(updatedOrder);
   } catch (error) {

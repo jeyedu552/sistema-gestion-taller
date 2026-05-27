@@ -44,6 +44,7 @@ model User {
   vehicles        Vehicle[]     // Si el usuario es CLIENTE, tiene vehículos
   assignedOrders  WorkOrder[]   @relation("MechanicOrders") // Si es MECANICO, tiene órdenes
   messages        ChatMessage[] // Mensajes enviados en los chats
+  notifications   Notification[] // Alertas in-app del usuario
 }
 
 model Vehicle {
@@ -106,4 +107,16 @@ model ChatMessage {
   // Relación con el Remitente (Cualquiera de los 3 roles que envíe el mensaje)
   senderId    String
   sender      User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  title     String   // Ej: "Nueva Orden", "Vehículo Listo"
+  message   String   // Detalle de la notificación
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  // Relación con el usuario que recibe la alerta
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

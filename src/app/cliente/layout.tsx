@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link'
+import NotificationBell from '@/components/NotificationBell';
 
 /**
  * Layout para el portal de clientes.
@@ -66,11 +67,18 @@ export default function ClientLayout({
             <a href="#" className="text-[13px] font-semibold text-on-primary-container hover:text-white transition-colors">Mis Vehículos</a>
           </div>
 
+          {/* --- AQUÍ INSERTAMOS LA CAMPANILLA Y UN SEPARADOR --- */}
+          <div className="flex items-center gap-3">
+            <NotificationBell />
+            <div className="h-6 w-[1px] bg-white/20"></div>
+          </div>
+          {/* ---------------------------------------------------- */}
+
           {/* Perfil del Cliente */}
-          <Link href="/cliente/perfil" className="flex items-center gap-2.5 cursor-pointer hover:bg-slate-50 transition-colors p-1 rounded-md">
+          <Link href="/cliente/perfil" className="flex items-center gap-2.5 cursor-pointer hover:bg-white/10 transition-colors p-1 rounded-md">
               <div className="text-right hidden lg:block">
-                <p className="text-[12px] font-bold text-slate-800 leading-tight hover:text-primary transition-colors">{userName || 'Cliente'}</p>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Cliente</p>
+                <p className="text-[12px] font-bold text-white leading-tight">{userName || 'Cliente'}</p>
+                <p className="text-[10px] font-bold text-white/60 uppercase tracking-tight">Cliente</p>
               </div>
               <div className="w-7 h-7 rounded bg-primary flex items-center justify-center text-white text-[10px] font-black shadow-sm uppercase hover:bg-primary/90 transition-colors">
                 {(userName || 'CL').substring(0, 2)}

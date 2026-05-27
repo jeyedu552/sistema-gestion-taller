@@ -71,10 +71,6 @@ export default function AdminLayout({
     { href: '/administrador/ordenes', label: 'Órdenes de Servicio', icon: 'trolley' },
     { href: '/administrador/usuarios', label: 'Usuarios', icon: 'group' },
     { href: '/administrador/vehiculos', label: 'Vehículos', icon: 'directions_car' },
-    { href: '/administrador/mecanicos', label: 'Mecánicos', icon: 'engineering' },
-    { href: '/administrador/inventario', label: 'Inventario', icon: 'inventory_2' },
-    { href: '/administrador/reportes', label: 'Reportes', icon: 'assessment' },
-    { href: '/administrador/configuracion', label: 'Configuración', icon: 'settings' },
   ];
 
   return (

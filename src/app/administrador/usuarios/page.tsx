@@ -52,6 +52,7 @@ function UsersContent() {
   // Obtener término de búsqueda de la URL
   const searchParams = useSearchParams();
   const urlQuery = searchParams.get('q') || '';
+  const newUserRole = searchParams.get('nuevo');
 
   // Estados de Control Locales
   const [roleFilter, setRoleFilter] = useState<'ALL' | 'ADMIN' | 'MECANICO' | 'CLIENTE'>('ALL');
@@ -71,6 +72,16 @@ function UsersContent() {
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  useEffect(() => {
+    if (newUserRole !== 'cliente' && newUserRole !== 'mecanico') return;
+
+    setFormData((current) => ({
+      ...current,
+      role: newUserRole === 'mecanico' ? 'MECANICO' : 'CLIENTE',
+    }));
+    setShowModal(true);
+  }, [newUserRole]);
 
   const fetchUsers = async () => {
     try {

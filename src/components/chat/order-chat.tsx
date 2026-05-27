@@ -101,7 +101,7 @@ export const OrderChat = ({ orderId, currentUserId, currentUserRole, isLocked }:
   };
 
   return (
-    <div className="flex flex-col h-full min-h-[400px] lg:h-[500px] bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
+    <div className="flex flex-col h-[50vh] min-h-[350px] max-h-[500px] w-full bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
       {/* Header del Chat */}
       <div className="px-4 py-2.5 bg-slate-50/80 border-b border-slate-100 flex justify-between items-center">
         <div className="flex items-center gap-2">
@@ -129,7 +129,7 @@ export const OrderChat = ({ orderId, currentUserId, currentUserRole, isLocked }:
           </div>
         ) : (
           messages.map((msg, idx) => {
-            const isMe = msg.senderId === currentUserId;
+            const isMe = msg.senderId === currentUserId || msg.sender?.role === currentUserRole;
             return (
               <div key={msg.id || idx} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} animate-in fade-in slide-in-from-bottom-1 duration-300`}>
                 <div className={`max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-2 shadow-sm ${

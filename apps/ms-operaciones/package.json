@@ -7,8 +7,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "db:push": "prisma db push",
-    "db:seed": "ts-node prisma/seed.ts",
-    "postinstall": "prisma generate"
+    "db:seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
     "@opentelemetry/auto-instrumentations-node": "^0.78.0",

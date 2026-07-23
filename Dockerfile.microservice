@@ -39,8 +39,8 @@ ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ARG NEXT_PUBLIC_SOCKET_URL
 ENV NEXT_PUBLIC_SOCKET_URL=${NEXT_PUBLIC_SOCKET_URL}
 
-# Generar SOLO el cliente Prisma de la aplicación actual para evitar sobreescrituras en el monorepo
-RUN pnpm --filter ${APP_NAME} exec prisma generate || true
+# Generar el cliente Prisma global con todos los modelos
+RUN npx prisma generate
 
 # Construir la aplicación específica (tsc para backend, next build para frontend)
 RUN pnpm --filter ${APP_NAME} run build

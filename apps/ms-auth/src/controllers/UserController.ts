@@ -68,7 +68,7 @@ export class UserController {
     try {
       const { offline } = req.body || {};
       const activeDate = offline ? new Date(Date.now() - 20000) : new Date();
-      await userRepository.update(req.params.id, { lastActive: activeDate });
+      await userRepository.update(req.params.id, { lastLogin: activeDate });
       res.json({ success: true });
     } catch (error: any) {
       res.status(400).json({ error: 'Error actualizando conexión' });

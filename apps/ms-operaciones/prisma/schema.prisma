@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL_OPERACIONES")
+}
+
+model Vehicle {
+  id           String      @id @default(cuid())
+  // Aquí está el REFACTORING: ownerId es un simple String, no hay @relation hacia User
+  ownerId      String      
+  brand        String
+  model        String
+  year         Int
+  licensePlate String      @unique
+  isActive     Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  
+  // Relación con WorkOrders (dentro de esta misma base de datos sí es válido)
+  workOrders   WorkOrder[]
+}
+
+model WorkOrder {
+  id          String   @id @default(cuid())
+  description String
+  status      String   @default("PENDIENTE") // EN_PROGRESO, LISTO_PARA_LIQUIDAR, FINALIZADO
+  vehicleId   String
+  mechanicId  String?  // Soft-relation: ID del usuario mecanico de ms-auth
+  vehicle     Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt @default(now())
+  
+  items       ServiceItem[]
+}
+
+model ServiceItem {
+  id          String   @id @default(cuid())
+  description String   // Ej: Cambio de pastillas
+  price       Float    // Costo del servicio/repuesto
+  workOrderId String
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+}

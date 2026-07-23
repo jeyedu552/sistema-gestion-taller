@@ -1,0 +1,18 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL_CHAT")
+}
+
+model ChatMessage {
+  id         String   @id @default(cuid())
+  // Refactoring: no hay foreign keys
+  senderId   String   
+  senderName String
+  content    String
+  room       String   @default("general") // Para canales específicos si se desea
+  createdAt  DateTime @default(now())
+}

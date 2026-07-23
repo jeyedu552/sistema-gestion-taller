@@ -1,0 +1,190 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # BASES DE DATOS
+  # ==========================================
+  db-auth:
+    image: postgres:15-alpine
+    container_name: db-auth
+    environment:
+      POSTGRES_USER: taller_user
+      POSTGRES_PASSWORD: taller_pass
+      POSTGRES_DB: db_auth
+    ports:
+      - "5432:5432"
+    volumes:
+      - auth_data:/var/lib/postgresql/data
+    networks:
+      - taller_network
+
+  db-operaciones:
+    image: postgres:15-alpine
+    container_name: db-operaciones
+    environment:
+      POSTGRES_USER: taller_user
+      POSTGRES_PASSWORD: taller_pass
+      POSTGRES_DB: db_operaciones
+    volumes:
+      - ./init-dbs.sql:/docker-entrypoint-initdb.d/init.sql
+      - operaciones_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432" # Puerto 5433 para no chocar con db-auth en tu PC
+    networks:
+      - taller_network
+
+  # ==========================================
+  # MICROSERVICIOS BACKEND
+  # ==========================================
+  ms-auth:
+    build:
+      context: .
+      dockerfile: Dockerfile.microservice
+      args:
+        APP_NAME: "@taller/ms-auth"
+    container_name: ms-auth
+    environment:
+      - PORT=3001
+      - DATABASE_URL_AUTH=postgresql://taller_user:taller_pass@db-auth:5432/db_auth?schema=public
+      - JWT_SECRET=super_secret_key_cambiame_en_produccion
+    ports:
+      - "3001:3001"
+    depends_on:
+      - db-auth
+    networks:
+      - taller_network
+    # Primero sincroniza la BD (crea las tablas) y luego arranca
+    command: sh -c "pnpm --filter @taller/ms-auth exec prisma db push && pnpm --filter @taller/ms-auth start"
+
+  ms-operaciones:
+    build:
+      context: .
+      dockerfile: Dockerfile.microservice
+      args:
+        APP_NAME: "@taller/ms-operaciones"
+    container_name: ms-operaciones
+    environment:
+      - PORT=3002
+      - DATABASE_URL_OPERACIONES=postgresql://taller_user:taller_pass@db-operaciones:5432/db_operaciones?schema=public
+    ports:
+      - "3002:3002"
+    depends_on:
+      - db-operaciones
+    networks:
+      - taller_network
+    command: sh -c "pnpm --filter @taller/ms-operaciones exec prisma db push && pnpm --filter @taller/ms-operaciones start"
+
+  ms-chat:
+    build:
+      context: .
+      dockerfile: Dockerfile.microservice
+      args:
+        APP_NAME: "@taller/ms-chat"
+    container_name: ms-chat
+    environment:
+      - PORT=3003
+      - DATABASE_URL_CHAT=postgresql://taller_user:taller_pass@db-operaciones:5432/db_chat?schema=public
+    ports:
+      - "3003:3003"
+    depends_on:
+      - db-operaciones
+    networks:
+      - taller_network
+    command: sh -c "pnpm --filter @taller/ms-chat exec prisma db push && pnpm --filter @taller/ms-chat start"
+
+  # ==========================================
+  # API GATEWAY (El orquestador de tráfico)
+  # ==========================================
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.microservice
+      args:
+        APP_NAME: "@taller/api-gateway"
+    container_name: api-gateway
+    environment:
+      - PORT=3000
+      - JWT_SECRET=super_secret_key_cambiame_en_produccion
+      - MS_AUTH_URL=http://ms-auth:3001
+      - MS_OPERACIONES_URL=http://ms-operaciones:3002
+      - MS_CHAT_URL=http://ms-chat:3003
+    ports:
+      - "3000:3000"
+    depends_on:
+      - ms-auth
+      - ms-operaciones
+      - ms-chat
+    networks:
+      - taller_network
+    command: sh -c "pnpm --filter @taller/api-gateway start"
+
+  # ==========================================
+  # FRONTEND (Next.js)
+  # ==========================================
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.microservice
+      args:
+        APP_NAME: "@taller/frontend"
+        NEXT_PUBLIC_API_URL: "http://localhost:3000/api"
+        NEXT_PUBLIC_SOCKET_URL: "http://localhost:3000"
+    container_name: frontend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:3000/api
+      - NEXT_PUBLIC_SOCKET_URL=http://localhost:3000
+    ports:
+      - "3005:3000" # Exponemos el front en 3005 para no chocar con el Gateway
+    depends_on:
+      - api-gateway
+    networks:
+      - taller_network
+    command: sh -c "pnpm --filter @taller/frontend start"
+
+  # ==========================================
+  # MONITOREO (Fase 1 y 2)
+  # ==========================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - taller_network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+    volumes:
+      - ./monitoring/grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3333:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - taller_network
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    ports:
+      - "16686:16686" # UI
+      - "4318:4318"   # OTLP over HTTP
+    networks:
+      - taller_network
+
+networks:
+  taller_network:
+    driver: bridge
+
+volumes:
+  auth_data:
+  operaciones_data:
+  prometheus_data:
+  grafana_data:

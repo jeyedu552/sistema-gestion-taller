@@ -1,0 +1,49 @@
+FROM node:20-alpine
+
+# Instalar dependencias de compilación para C++ y Python (necesario para bcrypt) y OpenSSL para Prisma
+RUN apk add --no-cache python3 make g++ openssl
+
+# Instalar pnpm globalmente
+RUN npm install -g pnpm
+
+# Establecer directorio de trabajo
+WORKDIR /app
+
+# --- OPTIMIZACIÓN DE CACHÉ DE DOCKER ---
+# Copiamos SOLO los archivos que definen las dependencias primero.
+# Docker guardará esto en caché. Si cambias el código (ej. un .ts o .tsx),
+# Docker NO volverá a descargar todas las librerías de internet.
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/ms-auth/package.json ./apps/ms-auth/
+COPY apps/ms-operaciones/package.json ./apps/ms-operaciones/
+COPY apps/ms-chat/package.json ./apps/ms-chat/
+COPY apps/api-gateway/package.json ./apps/api-gateway/
+COPY apps/frontend/package.json ./apps/frontend/
+COPY packages/shared-types/package.json ./packages/shared-types/
+
+# Instalar todas las dependencias (se usa el caché a menos que cambies un package.json)
+RUN pnpm install
+
+# --- FIN OPTIMIZACIÓN ---
+
+# Ahora sí, copiamos el resto del código fuente
+COPY . .
+
+# Recibir el nombre de la aplicación a construir
+ARG APP_NAME
+ENV APP_NAME=${APP_NAME}
+
+# Recibir variables de entorno de frontend para el build de Next.js
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ARG NEXT_PUBLIC_SOCKET_URL
+ENV NEXT_PUBLIC_SOCKET_URL=${NEXT_PUBLIC_SOCKET_URL}
+
+# Generar SOLO el cliente Prisma de la aplicación actual para evitar sobreescrituras en el monorepo
+RUN pnpm --filter ${APP_NAME} exec prisma generate || true
+
+# Construir la aplicación específica (tsc para backend, next build para frontend)
+RUN pnpm --filter ${APP_NAME} run build
+
+# El comando de inicio será inyectado por el docker-compose
+CMD ["sh", "-c", "pnpm --filter ${APP_NAME} start"]

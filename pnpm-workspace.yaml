@@ -1,10 +1,16 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+
 allowBuilds:
   '@github/keytar': true
+  '@prisma/client': set this to true or false
   '@prisma/engines': true
   bcrypt: true
   esbuild: true
   node-pty: true
   prisma: true
+  protobufjs: set this to true or false
   sharp: false
   unrs-resolver: false
 ignoredBuiltDependencies:

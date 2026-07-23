@@ -24,7 +24,7 @@ async function getSession() {
  */
 export async function GET(
   request: Request,
-  { params }: { params: { orderId: string } }
+  { params }: { params: Promise<{ orderId: string }> }
 ) {
   const session = await getSession();
   if (!session) {
@@ -77,7 +77,7 @@ export async function GET(
  */
 export async function POST(
   request: Request,
-  { params }: { params: { orderId: string } }
+  { params }: { params: Promise<{ orderId: string }> }
 ) {
   const session = await getSession();
   if (!session) {

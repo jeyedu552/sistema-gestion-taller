@@ -27,7 +27,7 @@ async function getMechanicSession() {
 // Obtener todos los ítems de una orden específica
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getMechanicSession();
   
@@ -66,7 +66,7 @@ export async function GET(
 // Añadir un nuevo ítem a la orden
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getMechanicSession();
   

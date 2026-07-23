@@ -23,7 +23,7 @@ async function isAdmin() {
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   if (!(await isAdmin())) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 403 });

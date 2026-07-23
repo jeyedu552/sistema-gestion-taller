@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
 
@@ -23,7 +23,7 @@ async function getSession() {
  * Capa: App Router - API Routes (HU-07)
  */
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ orderId: string }> }
 ) {
   const session = await getSession();
@@ -76,7 +76,7 @@ export async function GET(
  * Endpoint para guardar un nuevo mensaje en la base de datos.
  */
 export async function POST(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ orderId: string }> }
 ) {
   const session = await getSession();

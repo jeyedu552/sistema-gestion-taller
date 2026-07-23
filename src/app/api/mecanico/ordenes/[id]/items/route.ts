@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
 
@@ -26,7 +26,7 @@ async function getMechanicSession() {
 
 // Obtener todos los ítems de una orden específica
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getMechanicSession();
@@ -65,7 +65,7 @@ export async function GET(
 
 // Añadir un nuevo ítem a la orden
 export async function POST(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getMechanicSession();

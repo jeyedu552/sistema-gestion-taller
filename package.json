@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev:local": "concurrently -c \"cyan,magenta,yellow,blue,green\" -n \"GATEWAY,AUTH,OPERACIONES,CHAT,FRONTEND\" \"pnpm --filter @taller/api-gateway dev\" \"pnpm --filter @taller/ms-auth dev\" \"pnpm --filter @taller/ms-operaciones dev\" \"pnpm --filter @taller/ms-chat dev\" \"pnpm --filter @taller/frontend dev\"",
-    "build": "next build",
+    "build": "pnpm -r run build",
     "start": "NODE_ENV=production node server.js",
     "lint": "eslint",
     "gemini": "gemini"

@@ -53,7 +53,7 @@ export async function PATCH(
     }
 
     // 2. Calcular el total acumulado en el servidor (Regla Técnica HU-08)
-    const totalAmount = order.items.reduce((acc, item) => acc + item.price, 0);
+    const totalAmount = order.items.reduce((acc: number, item: any) => acc + item.price, 0);
 
     // 3. Actualizar estado a FINALIZADO (Liquidado)
     // Guardamos el total calculado para auditoría futura

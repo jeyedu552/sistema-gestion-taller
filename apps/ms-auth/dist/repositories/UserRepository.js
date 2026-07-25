@@ -16,7 +16,7 @@ class UserRepository {
     }
     async getAllUsers() {
         return prisma.user.findMany({
-            select: { id: true, name: true, email: true, role: true, isActive: true, lastActive: true, createdAt: true }
+            select: { id: true, name: true, email: true, role: true, isActive: true, lastLogin: true, createdAt: true }
         });
     }
     async deleteUser(id) {

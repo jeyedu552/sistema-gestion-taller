@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma, WorkOrder, ServiceItem } from '@prisma/client';
+import { PrismaClient, Prisma, WorkOrder, ServiceItem, OrderStatus } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -30,7 +30,7 @@ export class OrderRepository {
     return prisma.workOrder.create({ data, include: { vehicle: true } });
   }
 
-  async updateOrderStatus(id: string, status: string) {
+  async updateOrderStatus(id: string, status: OrderStatus) {
     return prisma.workOrder.update({
       where: { id },
       data: { status }

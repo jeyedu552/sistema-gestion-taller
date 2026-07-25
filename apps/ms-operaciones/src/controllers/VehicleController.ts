@@ -17,10 +17,10 @@ export class VehicleController {
         brand,
         model,
         year: Number(year),
-        licensePlate: plate
+        plate: plate
       });
 
-      res.status(201).json({ ...newVehicle, plate: newVehicle.licensePlate });
+      res.status(201).json(newVehicle);
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'Error al registrar vehículo' });
@@ -30,9 +30,8 @@ export class VehicleController {
   async getMyVehicles(req: Request, res: Response) {
     try {
       const vehicles = await vehicleRepository.findAll(); // Administrador necesita ver todos
-      // En un caso real, si es cliente, se filtraría por ownerId. Aquí devolvemos todos y mapeamos plate
-      const mappedVehicles = vehicles.map(v => ({ ...v, plate: v.licensePlate }));
-      res.json(mappedVehicles);
+      // En un caso real, si es cliente, se filtraría por ownerId. Aquí devolvemos todos
+      res.json(vehicles);
     } catch (error) {
       res.status(500).json({ error: 'Error al obtener vehículos' });
     }
@@ -60,11 +59,11 @@ export class VehicleController {
       if (brand !== undefined) updateData.brand = brand;
       if (model !== undefined) updateData.model = model;
       if (year !== undefined) updateData.year = Number(year);
-      if (plate !== undefined) updateData.licensePlate = plate;
+      if (plate !== undefined) updateData.plate = plate;
       if (isActive !== undefined) updateData.isActive = isActive;
 
       const updated = await vehicleRepository.update(id, updateData);
-      res.json({ ...updated, plate: updated.licensePlate });
+      res.json(updated);
     } catch (error) {
       res.status(500).json({ error: 'Error al actualizar vehículo' });
     }

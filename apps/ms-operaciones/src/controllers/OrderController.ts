@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { OrderStatus } from '@prisma/client';
 import { orderRepository } from '../repositories/OrderRepository';
 
 export class OrderController {
@@ -36,7 +37,7 @@ export class OrderController {
     try {
       const { id } = req.params;
       const { status } = req.body;
-      const updated = await orderRepository.updateOrderStatus(id, status);
+      const updated = await orderRepository.updateOrderStatus(id, status as OrderStatus);
       res.json(updated);
     } catch (error: any) {
       res.status(400).json({ error: error.message });

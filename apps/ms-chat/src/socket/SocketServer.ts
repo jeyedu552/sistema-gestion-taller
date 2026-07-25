@@ -8,7 +8,7 @@ export class SocketServer {
   constructor(server: HttpServer) {
     this.io = new Server(server, {
       cors: {
-        origin: '*', // En producción debería restringirse al dominio del frontend
+        origin: '*',
         methods: ['GET', 'POST']
       }
     });
@@ -20,31 +20,26 @@ export class SocketServer {
     this.io.on('connection', async (socket: Socket) => {
       console.log(`🔌 Cliente conectado: ${socket.id}`);
 
-      // Cuando un usuario pide el historial al entrar
-      socket.on('requestHistory', async (room: string = 'general') => {
+      // Solicitud de historial por orden de trabajo
+      socket.on('requestHistory', async (workOrderId: string) => {
         try {
-          const history = await chatRepository.getHistory(room);
-          // Emitimos solo a quien lo pidió
-          socket.emit('chatHistory', history.reverse()); 
+          const history = await chatRepository.getHistory(workOrderId);
+          socket.emit('chatHistory', history.reverse());
         } catch (error) {
           console.error('Error obteniendo historial:', error);
         }
       });
 
-      // Cuando llega un mensaje nuevo
-      socket.on('sendMessage', async (data: { senderId: string, senderName: string, content: string, room?: string }) => {
+      // Nuevo mensaje: el cliente envía { workOrderId, senderId, text }
+      socket.on('sendMessage', async (data: { workOrderId: string; senderId: string; text: string }) => {
         try {
-          const room = data.room || 'general';
-          
-          // 1. Guardar en Base de Datos (Persistencia)
-          const savedMessage = await chatRepository.saveMessage({
-            senderId: data.senderId,
-            senderName: data.senderName,
-            content: data.content,
-            room
-          });
+          const savedMessage = await chatRepository.saveFullMessage(
+            data.workOrderId,
+            data.senderId,
+            data.text
+          );
 
-          // 2. Emitir a todos los conectados (Tiempo Real)
+          // Emitir a todos los conectados
           this.io.emit('newMessage', savedMessage);
         } catch (error) {
           console.error('Error guardando mensaje:', error);

@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 
 export class VehicleRepository {
   
-  async create(data: Prisma.VehicleCreateInput): Promise<Vehicle> {
+  async create(data: Prisma.VehicleUncheckedCreateInput): Promise<Vehicle> {
     return prisma.vehicle.create({ data });
   }
 
@@ -18,7 +18,7 @@ export class VehicleRepository {
     return prisma.vehicle.findMany();
   }
 
-  async update(id: string, data: Prisma.VehicleUpdateInput): Promise<Vehicle> {
+  async update(id: string, data: Prisma.VehicleUncheckedUpdateInput): Promise<Vehicle> {
     return prisma.vehicle.update({ where: { id }, data });
   }
 
